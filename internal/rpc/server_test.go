@@ -80,6 +80,7 @@ func TestMustServeForever(t *testing.T) {
 	}()
 	serveUntilKilledFunc()
 	// This test will intentionally deadlock if the stop function is not respected.
+	fmt.Printf("Lol")
 }
 
 func runGrpcWithProxyTests(assert *assert.Assertions, s grpcServerWithProxy, conn *grpc.ClientConn, httpClient *http.Client, endpoint string) {

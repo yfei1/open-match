@@ -19,6 +19,7 @@ import (
 	"io"
 	"testing"
 	"time"
+	"fmt"
 
 	structpb "github.com/golang/protobuf/ptypes/struct"
 	"github.com/stretchr/testify/assert"
@@ -292,6 +293,7 @@ func TestQueryTickets(t *testing.T) {
 			})
 		}
 	})
+	fmt.Printf("Done")
 }
 
 // validateTicket validates that the fetched ticket is identical to the expected ticket.

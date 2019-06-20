@@ -33,20 +33,17 @@ import (
 type insecureServer struct {
 	grpcLh          *netlistener.ListenerHolder
 	grpcListener    net.Listener
-	grpcServeWaiter chan error
 	grpcServer      *grpc.Server
 
 	httpLh          *netlistener.ListenerHolder
 	httpListener    net.Listener
-	httpServeWaiter chan error
 	httpMux         *http.ServeMux
 	proxyMux        *runtime.ServeMux
 	httpServer      *http.Server
+	httpContext context.Context
 }
 
 func (s *insecureServer) start(params *ServerParams) (func(), error) {
-	s.grpcServeWaiter = make(chan error)
-	s.httpServeWaiter = make(chan error)
 	var serverStartWaiter sync.WaitGroup
 
 	s.httpMux = params.ServeMux
@@ -67,7 +64,8 @@ func (s *insecureServer) start(params *ServerParams) (func(), error) {
 	serverStartWaiter.Add(1)
 	go func() {
 		serverStartWaiter.Done()
-		s.grpcServeWaiter <- s.grpcServer.Serve(s.grpcListener)
+		gerr := s.grpcServer.Serve(s.grpcListener)
+		log.Printf("GPRC %s", gerr)
 	}()
 
 	// Configure the HTTP proxy server.
@@ -78,7 +76,7 @@ func (s *insecureServer) start(params *ServerParams) (func(), error) {
 	s.httpListener = httpListener
 
 	// Bind gRPC handlers
-	ctx := context.Background()
+	ctx, cancel := context.WithCancel(context.Background())
 
 	for _, handlerFunc := range params.handlersForGrpcProxy {
 		if err = handlerFunc(ctx, s.proxyMux, grpcListener.Addr().String(), []grpc.DialOption{grpc.WithInsecure()}); err != nil {
@@ -95,8 +93,11 @@ func (s *insecureServer) start(params *ServerParams) (func(), error) {
 	serverStartWaiter.Add(1)
 	go func() {
 		serverStartWaiter.Done()
-		s.httpServeWaiter <- s.httpServer.Serve(s.httpListener)
+		herr := s.httpServer.Serve(s.httpListener)
+		log.Printf("HTTP %s", herr)
+		cancel()
 	}()
+	s.httpContext = ctx
 
 	return serverStartWaiter.Wait, nil
 }
@@ -107,6 +108,7 @@ func (s *insecureServer) stop() {
 		log.Printf("%s", err)
 	}
 
+	s.httpServer.Shutdown(s.httpContext)
 	if err := s.httpServer.Close(); err != nil {
 		log.Printf("%s", err)
 	}

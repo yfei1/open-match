@@ -281,8 +281,8 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 
 		// If this attribute wasn't provided, continue to the next attribute to index.
 		if !ok {
-			redisLogger.WithFields(logrus.Fields{
-				"attribute": attribute}).Warning("Couldn't find index in Ticket Properties")
+			//redisLogger.WithFields(logrus.Fields{
+			//	"attribute": attribute}).Warning("Couldn't find index in Ticket Properties")
 			continue
 		}
 
