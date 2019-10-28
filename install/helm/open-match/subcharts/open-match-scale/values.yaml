@@ -16,13 +16,13 @@ scaleFrontend:
   hostName: om-scale-frontend
   httpPort: 51509
   replicas: 1
-  image: openmatch-scale-frontend
+  image: open-match.dev/open-match/cmd/scale-frontend
 
 scaleBackend:
   hostName: om-scale-backend
   httpPort: 51510
   replicas: 1
-  image: openmatch-scale-backend
+  image: open-match.dev/open-match/cmd/scale-backend
 
 configs:
   default:

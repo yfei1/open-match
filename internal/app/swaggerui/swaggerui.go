@@ -22,7 +22,6 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path/filepath"
 
 	"github.com/sirupsen/logrus"
 	"open-match.dev/open-match/internal/config"
@@ -56,18 +55,17 @@ func serve(cfg config.View) {
 	closer := telemetry.Setup("swaggerui", mux, cfg)
 	defer closer()
 	port := cfg.GetInt("api.swaggerui.httpport")
-	baseDir, err := os.Getwd()
-	if err != nil {
-		logger.WithError(err).Fatal("cannot get current working directory")
-	}
-	directory := filepath.Join(baseDir, "static")
-
-	_, err = os.Stat(directory)
-	if err != nil {
-		logger.WithError(err).Fatalf("Cannot access directory %s", directory)
+	dataPath, ok := os.LookupEnv("KO_DATA_PATH")
+	if !ok {
+		logger.Fatalf("KO_DATA_PATH not presented")
 	}
 
-	mux.Handle("/", http.FileServer(http.Dir(directory)))
+	_, err := os.Stat(dataPath)
+	if err != nil {
+		logger.WithError(err).Fatalf("cannot access directory %s", dataPath)
+	}
+
+	mux.Handle("/", http.FileServer(http.Dir(dataPath)))
 	mux.Handle(telemetry.HealthCheckEndpoint, telemetry.NewAlwaysReadyHealthCheck())
 	bindHandler(mux, cfg, "/v1/frontend/", "frontend")
 	bindHandler(mux, cfg, "/v1/backend/", "backend")
@@ -81,7 +79,7 @@ func serve(cfg config.View) {
 		Handler: mux,
 	}
 	logger.Infof("SwaggerUI for Open Match")
-	logger.Infof("Serving static directory: %s", directory)
+	logger.Infof("Serving static directory: %s", dataPath)
 	logger.Infof("Serving on %s", addr)
 	logger.Fatal(srv.ListenAndServe())
 }
