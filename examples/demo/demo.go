@@ -22,6 +22,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 
 	"golang.org/x/net/websocket"
 	"open-match.dev/open-match/examples/demo/bytesub"
@@ -35,7 +36,17 @@ import (
 func Run(comps map[string]func(*components.DemoShared)) {
 	log.Print("Initializing Server")
 
-	fileServe := http.FileServer(http.Dir("/app/static"))
+	dataPath, ok := os.LookupEnv("KO_DATA_PATH")
+	if !ok {
+		log.Fatalf("KO_DATA_PATH not presented")
+	}
+
+	_, err := os.Stat(dataPath)
+	if err != nil {
+		log.Fatalf("cannot access directory %s, desc: %w", dataPath, err)
+	}
+
+	fileServe := http.FileServer(http.Dir(dataPath))
 	http.Handle("/static/", http.StripPrefix("/static/", fileServe))
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/" {
@@ -72,6 +83,6 @@ func Run(comps map[string]func(*components.DemoShared)) {
 	}
 
 	address := fmt.Sprintf(":%d", 51507)
-	err := http.ListenAndServe(address, nil)
+	err = http.ListenAndServe(address, nil)
 	log.Printf("HTTP server closed: %s", err.Error())
 }

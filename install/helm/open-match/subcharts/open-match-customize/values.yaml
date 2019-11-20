@@ -20,13 +20,13 @@ function:
   enabled: false
   replicas: 3
   portType: ClusterIP
-  image: openmatch-mmf-go-soloduel
+  image: open-match.dev/open-match/examples/functions/golang/soloduel
 
 evaluator:
   enabled: false
   replicas: 3
   portType: ClusterIP
-  image: openmatch-evaluator-go-simple
+  image: open-match.dev/open-match/examples/evaluator/golang/simple
 
 evaluatorConfigs: 
   # We use harness to implement the MMFs. MMF itself only requires one configmap but harness expects two,

@@ -115,21 +115,9 @@ func newRedis(cfg config.View) Service {
 
 // HealthCheck indicates if the database is reachable.
 func (rb *redisBackend) HealthCheck(ctx context.Context) error {
-	redisConn, err := rb.healthCheckPool.GetContext(ctx)
-	if err != nil {
-		return status.Errorf(codes.Unavailable, "%v", err)
-	}
-	defer handleConnectionClose(&redisConn)
-
 	poolStats := rb.redisPool.Stats()
 	telemetry.SetGauge(ctx, mRedisConnPoolActive, int64(poolStats.ActiveCount))
 	telemetry.SetGauge(ctx, mRedisConnPoolIdle, int64(poolStats.IdleCount))
-
-	_, err = redisConn.Do("PING")
-	// Encountered an issue getting a connection from the pool.
-	if err != nil {
-		return status.Errorf(codes.Unavailable, "%v", err)
-	}
 
 	return nil
 }

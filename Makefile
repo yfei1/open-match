@@ -109,6 +109,7 @@ SYNCHRONIZER_PORT = 51506
 DEMO_PORT = 51507
 PROTOC := $(TOOLCHAIN_BIN)/protoc$(EXE_EXTENSION)
 HELM = $(TOOLCHAIN_BIN)/helm$(EXE_EXTENSION)
+KO = $(TOOLCHAIN_BIN)/ko$(EXE_EXTENSION)
 MINIKUBE = $(TOOLCHAIN_BIN)/minikube$(EXE_EXTENSION)
 KUBECTL = $(TOOLCHAIN_BIN)/kubectl$(EXE_EXTENSION)
 KIND = $(TOOLCHAIN_BIN)/kind$(EXE_EXTENSION)
@@ -209,92 +210,6 @@ local-cloud-build: LOCAL_CLOUD_BUILD_PUSH = # --push
 local-cloud-build: gcloud
 	cloud-build-local --config=cloudbuild.yaml --dryrun=false $(LOCAL_CLOUD_BUILD_PUSH) --substitutions SHORT_SHA=$(SHORT_SHA),_GCB_POST_SUBMIT=$(_GCB_POST_SUBMIT),_GCB_LATEST_VERSION=$(_GCB_LATEST_VERSION),BRANCH_NAME=$(BRANCH_NAME) .
 
-################################################################################
-## #############################################################################
-## Image commands:
-## These commands are auto-generated based on a complete list of images.  All
-## folders in cmd/ are turned into an image using Dockerfile.cmd.  Additional
-## images are specified by the IMAGES variable.  Image commands ommit the
-## "openmatch-" prefix on the image name and tags.
-##
-
-#######################################
-## build-images / build-<image name>-image: builds images locally
-##
-build-images: $(foreach IMAGE,$(IMAGES),build-$(IMAGE)-image)
-
-# Include all-protos here so that all dependencies are guaranteed to be downloaded after the base image is created.
-# This is important so that the repository does not have any mutations while building individual images.
-build-base-build-image: docker $(ALL_PROTOS)
-	docker build -f Dockerfile.base-build -t open-match-base-build -t $(REGISTRY)/openmatch-base-build:$(TAG) -t $(REGISTRY)/openmatch-base-build:$(ALTERNATE_TAG) .
-
-$(foreach CMD,$(CMDS),build-$(CMD)-image): build-%-image: docker build-base-build-image
-	docker build \
-		-f Dockerfile.cmd \
-		$(IMAGE_BUILD_ARGS) \
-		--build-arg=IMAGE_TITLE=$* \
-		-t $(REGISTRY)/openmatch-$*:$(TAG) \
-		-t $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG) \
-		.
-
-build-mmf-go-soloduel-image: docker build-base-build-image
-	docker build -f examples/functions/golang/soloduel/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-soloduel:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-soloduel:$(ALTERNATE_TAG) .
-
-build-mmf-go-rosterbased-image: docker build-base-build-image
-	docker build -f examples/functions/golang/rosterbased/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-rosterbased:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-rosterbased:$(ALTERNATE_TAG) .
-
-build-mmf-go-pool-image: docker build-base-build-image
-	docker build -f examples/functions/golang/pool/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-pool:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-pool:$(ALTERNATE_TAG) .
-
-build-evaluator-go-simple-image: docker build-base-build-image
-	docker build -f examples/evaluator/golang/simple/Dockerfile -t $(REGISTRY)/openmatch-evaluator-go-simple:$(TAG) -t $(REGISTRY)/openmatch-evaluator-go-simple:$(ALTERNATE_TAG) .
-
-build-stress-frontend-image: docker
-	docker build -f test/stress/Dockerfile -t $(REGISTRY)/openmatch-stress-frontend:$(TAG) -t $(REGISTRY)/openmatch-stress-frontend:$(ALTERNATE_TAG) .
-
-#######################################
-## push-images / push-<image name>-image: builds and pushes images to your
-## container registry.
-##
-push-images: $(foreach IMAGE,$(IMAGES),push-$(IMAGE)-image)
-
-$(foreach IMAGE,$(IMAGES),push-$(IMAGE)-image): push-%-image: build-%-image docker
-	docker push $(REGISTRY)/openmatch-$*:$(TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG)
-ifeq ($(_GCB_POST_SUBMIT),1)
-	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(VERSIONED_CANARY_TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(VERSIONED_CANARY_TAG)
-ifeq ($(BASE_VERSION),0.0.0-dev)
-	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(DATED_CANARY_TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(DATED_CANARY_TAG)
-	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(CANARY_TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(CANARY_TAG)
-endif
-endif
-
-#######################################
-## retag-images / retag-<image name>-image: publishes images on the public
-## container registry.  Used for publishing releases.
-##
-retag-images: $(foreach IMAGE,$(IMAGES),retag-$(IMAGE)-image)
-
-retag-%-image: SOURCE_REGISTRY = gcr.io/$(OPEN_MATCH_BUILD_PROJECT_ID)
-retag-%-image: TARGET_REGISTRY = gcr.io/$(OPEN_MATCH_PUBLIC_IMAGES_PROJECT_ID)
-retag-%-image: SOURCE_TAG = canary
-$(foreach IMAGE,$(IMAGES),retag-$(IMAGE)-image): retag-%-image: docker
-	docker pull $(SOURCE_REGISTRY)/openmatch-$*:$(SOURCE_TAG)
-	docker tag $(SOURCE_REGISTRY)/openmatch-$*:$(SOURCE_TAG) $(TARGET_REGISTRY)/openmatch-$*:$(TAG)
-	docker push $(TARGET_REGISTRY)/openmatch-$*:$(TAG)
-
-#######################################
-## clean-images / clean-<image name>-image: removes images from local docker
-##
-clean-images: docker $(foreach IMAGE,$(IMAGES),clean-$(IMAGE)-image)
-	-docker rmi -f open-match-base-build
-
-$(foreach IMAGE,$(IMAGES),clean-$(IMAGE)-image): clean-%-image:
-	-docker rmi -f $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG)
-
 #####################################################################################################################
 update-chart-deps: build/toolchain/bin/helm$(EXE_EXTENSION)
 	(cd $(REPOSITORY_ROOT)/install/helm/open-match; $(HELM) repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com; $(HELM) dependency update)
@@ -320,15 +235,16 @@ build/chart/index.yaml.$(YEAR_MONTH_DAY): build/chart/index.yaml
 
 build/chart/: build/chart/index.yaml build/chart/index.yaml.$(YEAR_MONTH_DAY)
 
-install-chart-prerequisite: build/toolchain/bin/kubectl$(EXE_EXTENSION) update-chart-deps
+install-chart-prerequisite: build/toolchain/bin/kubectl$(EXE_EXTENSION) build/toolchain/bin/ko$(EXE_EXTENSION) update-chart-deps
 	-$(KUBECTL) create namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE)
 	$(KUBECTL) apply -f install/gke-metadata-server-workaround.yaml
 
 # Used for Open Match development. Install om-configmap-override.yaml by default.
 HELM_UPGRADE_FLAGS = --cleanup-on-fail -i --no-hooks --debug --timeout=600s --namespace=$(OPEN_MATCH_KUBERNETES_NAMESPACE) --set global.gcpProjectId=$(GCP_PROJECT_ID) --set open-match-override.enabled=true
 # Used for generate static yamls. Install om-configmap-override.yaml as needed.
+HELM_KO_FLAGS = --no-hooks --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) --set global.gcpProjectId=$(GCP_PROJECT_ID) --set open-match-override.enabled=true
 HELM_TEMPLATE_FLAGS = --no-hooks --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) --set usingHelmTemplate=true
-HELM_IMAGE_FLAGS = --set global.image.registry=$(REGISTRY) --set global.image.tag=$(TAG)
+HELM_IMAGE_FLAGS = --set global.image.registry=$(REGISTRY)/ --set global.image.tag=:$(TAG)
 
 install-demo: build/toolchain/bin/helm$(EXE_EXTENSION)
 	cp $(REPOSITORY_ROOT)/install/02-open-match-demo.yaml $(REPOSITORY_ROOT)/install/tmp-demo.yaml
@@ -339,34 +255,37 @@ install-demo: build/toolchain/bin/helm$(EXE_EXTENSION)
 
 # install-large-chart will install open-match-core, open-match-demo with the demo evaluator and mmf, and telemetry supports.
 install-large-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) upgrade $(OPEN_MATCH_HELM_NAME) $(HELM_UPGRADE_FLAGS) install/helm/open-match $(HELM_IMAGE_FLAGS) \
+	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.evaluator.enabled=true \
 		--set global.telemetry.grafana.enabled=true \
 		--set global.telemetry.jaeger.enabled=true \
-		--set global.telemetry.prometheus.enabled=true
+		--set global.telemetry.prometheus.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -W -f -
 
 # install-chart will install open-match-core, open-match-demo, with the demo evaluator and mmf.
 install-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) upgrade $(OPEN_MATCH_HELM_NAME) $(HELM_UPGRADE_FLAGS) install/helm/open-match $(HELM_IMAGE_FLAGS) \
+	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-customize.enabled=true \
-		--set open-match-customize.evaluator.enabled=true
+		--set open-match-customize.evaluator.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -W -f -
 
 # install-scale-chart will wait for installing open-match-core with telemetry supports then install open-match-scale chart.
-install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) upgrade $(OPEN_MATCH_HELM_NAME) $(HELM_UPGRADE_FLAGS) install/helm/open-match $(HELM_IMAGE_FLAGS) \
+install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/ 
+	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.function.enabled=true \
 		--set open-match-customize.evaluator.enabled=true \
-		--set open-match-customize.function.image=openmatch-mmf-go-rosterbased \
+		--set open-match-customize.function.image=open-match.dev/open-match/examples/functions/golang/rosterbased \
 		--set global.telemetry.grafana.enabled=true \
 		--set global.telemetry.jaeger.enabled=true \
-		--set global.telemetry.prometheus.enabled=true
-	$(HELM) template $(OPEN_MATCH_HELM_NAME)-scale  install/helm/open-match $(HELM_TEMPLATE_FLAGS) $(HELM_IMAGE_FLAGS) \
+		--set global.telemetry.prometheus.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -f -
+
+install-scale-chart2:
+	$(HELM) template $(OPEN_MATCH_RELEASE_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) \
 		--set open-match-core.enabled=false \
-		--set open-match-scale.enabled=true | $(KUBECTL) apply -f -
+		--set open-match-scale.enabled=true \
+		--set global.logging.rpc.enabled=false | $(KO) apply -t $(TAG) -n open-match -P -f -
 
 # install-ci-chart will install open-match-core with pool based mmf for end-to-end in-cluster test.
 install-ci-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
@@ -548,6 +467,10 @@ build/toolchain/bin/protoc-gen-go$(EXE_EXTENSION):
 	mkdir -p $(TOOLCHAIN_BIN)
 	cd $(TOOLCHAIN_BIN) && $(GO) build -i -pkgdir . github.com/golang/protobuf/protoc-gen-go
 
+build/toolchain/bin/ko$(EXE_EXTENSION):
+	mkdir -p $(TOOLCHAIN_BIN)
+	cd $(TOOLCHAIN_BIN) && $(GO) build -pkgdir . github.com/google/ko/cmd/ko
+
 build/toolchain/bin/protoc-gen-grpc-gateway$(EXE_EXTENSION):
 	cd $(TOOLCHAIN_BIN) && $(GO) build -i -pkgdir . github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 
@@ -612,11 +535,10 @@ delete-kind-cluster: build/toolchain/bin/kind$(EXE_EXTENSION) build/toolchain/bi
 	-$(KIND) delete cluster
 
 create-gke-cluster: GKE_VERSION = 1.14.8-gke.17 # gcloud beta container get-server-config --zone us-west1-a
-create-gke-cluster: GKE_CLUSTER_SHAPE_FLAGS = --machine-type n1-standard-4 --enable-autoscaling --min-nodes 1 --num-nodes 2 --max-nodes 10 --disk-size 50
+create-gke-cluster: GKE_CLUSTER_SHAPE_FLAGS = --machine-type n1-standard-4 --enable-autoscaling --min-nodes 1 --num-nodes 3 --max-nodes 10 --disk-size 50
 create-gke-cluster: GKE_FUTURE_COMPAT_FLAGS = --no-enable-basic-auth --no-issue-client-certificate --enable-ip-alias --metadata disable-legacy-endpoints=true --enable-autoupgrade
 create-gke-cluster: build/toolchain/bin/kubectl$(EXE_EXTENSION) gcloud
 	$(GCLOUD) beta $(GCP_PROJECT_FLAG) container clusters create $(GKE_CLUSTER_NAME) $(GCP_LOCATION_FLAG) $(GKE_CLUSTER_SHAPE_FLAGS) $(GKE_FUTURE_COMPAT_FLAGS) $(GKE_CLUSTER_FLAGS) \
-		--enable-pod-security-policy \
 		--cluster-version $(GKE_VERSION) \
 		--image-type cos_containerd \
 		--tags open-match
@@ -711,9 +633,12 @@ build: assets
 	$(GO) build ./...
 	$(GO) build -tags e2ecluster ./...
 
+testprofiles:
+	$(GO) test examples/scale/scale/profile
+
 test: $(ALL_PROTOS) tls-certs third_party/
 	$(GO) test -cover -test.count $(GOLANG_TEST_COUNT) -race ./...
-	$(GO) test -cover -test.count $(GOLANG_TEST_COUNT) -run IgnoreRace$$ ./...
+	$(GO) test -cover -test.count $(GOLANG_TEST_COUNT) -race -run IgnoreRace$$ ./...
 
 test-e2e-cluster: all-protos tls-certs third_party/
 	$(HELM) test --timeout 7m30s -v 0 --logs -n $(OPEN_MATCH_KUBERNETES_NAMESPACE) $(OPEN_MATCH_HELM_NAME)
@@ -736,31 +661,15 @@ lint: fmt vet golangci lint-chart terraform-lint
 
 assets: $(ALL_PROTOS) tls-certs third_party/ build/chart/
 
-build/cmd: $(foreach CMD,$(CMDS),build/cmd/$(CMD))
+cmd/swaggerui/kodata:
+	mkdir -p $(BUILD_DIR)/cmd/swaggerui/kodata/api
+	cp $(REPOSITORY_ROOT)/third_party/swaggerui/* $(BUILD_DIR)/cmd/swaggerui/kodata/
+	$(SED_REPLACE) 's|https://open-match.dev/api/v.*/|/api/|g' $(BUILD_DIR)/cmd/swaggerui/kodata/config.json
+	cp $(REPOSITORY_ROOT)/api/*.json $(BUILD_DIR)/cmd/swaggerui/kodata/api/
 
-# Building a given build/cmd folder is split into two pieces: BUILD_PHONY and
-# COPY_PHONY.  The BUILD_PHONY is the common go build command, which is
-# reusable.  The COPY_PHONY is used by some targets which require additional
-# files to be included in the image.
-$(foreach CMD,$(CMDS),build/cmd/$(CMD)): build/cmd/%: build/cmd/%/BUILD_PHONY build/cmd/%/COPY_PHONY
-
-build/cmd/%/BUILD_PHONY:
-	mkdir -p $(BUILD_DIR)/cmd/$*
-	CGO_ENABLED=0 $(GO) build -a -installsuffix cgo -o $(BUILD_DIR)/cmd/$*/run open-match.dev/open-match/cmd/$*
-
-# Default is that nothing needs to be copied into the direcotry
-build/cmd/%/COPY_PHONY:
-	#
-
-build/cmd/swaggerui/COPY_PHONY:
-	mkdir -p $(BUILD_DIR)/cmd/swaggerui/static/api
-	cp third_party/swaggerui/* $(BUILD_DIR)/cmd/swaggerui/static/
-	$(SED_REPLACE) 's|https://open-match.dev/api/v.*/|/api/|g' $(BUILD_DIR)/cmd/swaggerui/static/config.json
-	cp api/*.json $(BUILD_DIR)/cmd/swaggerui/static/api/
-
-build/cmd/demo-%/COPY_PHONY:
-	mkdir -p $(BUILD_DIR)/cmd/demo-$*/
-	cp -r examples/demo/static $(BUILD_DIR)/cmd/demo-$*/static
+cmd/demo-first-match/kodata:
+	mkdir -p $(REPOSITORY_ROOT)/cmd/demo-first-match/kodata
+	cp -r $(REPOSITORY_ROOT)/examples/demo/static $(REPOSITORY_ROOT)/cmd/demo-first-match/kodata
 
 all: service-binaries example-binaries tools-binaries
 
@@ -864,6 +773,11 @@ ifeq ($(_GCB_POST_SUBMIT),1)
 	# Copy the files into multiple locations to keep a backup.
 	gsutil cp -a public-read $(BUILD_DIR)/chart/*.* gs://open-match-chart/chart/by-hash/$(VERSION)/
 	gsutil cp -a public-read $(BUILD_DIR)/chart/*.* gs://open-match-chart/chart/
+ifeq ($(BASE_VERSION),0.0.0-dev)
+	@echo "Not publishing images to public registry because this is not a release commit"
+else
+
+endif
 else
 	@echo "Not deploying build artifacts to open-match.dev because this is not a post commit change."
 endif
@@ -872,28 +786,12 @@ ci-reap-namespaces: build/toolchain/bin/reaper$(EXE_EXTENSION)
 	-$(TOOLCHAIN_BIN)/reaper -age=30m
 
 # For presubmit we want to update the protobuf generated files and verify that tests are good.
-presubmit: GOLANG_TEST_COUNT = 5
+presubmit: GOLANG_TEST_COUNT = 20
 presubmit: clean third_party/ update-chart-deps assets update-deps lint build install-toolchain test md-test terraform-test
 
 build/release/: presubmit clean-install-yaml install/yaml/
 	mkdir -p $(BUILD_DIR)/release/
 	cp $(REPOSITORY_ROOT)/install/yaml/* $(BUILD_DIR)/release/
-
-validate-preview-release:
-ifneq ($(_GCB_POST_SUBMIT),1)
-	@echo "You must run make with _GCB_POST_SUBMIT=1"
-	exit 1
-endif
-ifneq (,$(findstring -preview,$(BASE_VERSION)))
-	@echo "Creating preview for $(BASE_VERSION)"
-else
-	@echo "BASE_VERSION must contain -preview, it is $(BASE_VERSION)"
-	exit 1
-endif
-
-preview-release: REGISTRY = gcr.io/$(OPEN_MATCH_PUBLIC_IMAGES_PROJECT_ID)
-preview-release: TAG = $(BASE_VERSION)
-preview-release: validate-preview-release build/release/ retag-images ci-deploy-artifacts
 
 release: REGISTRY = gcr.io/$(OPEN_MATCH_PUBLIC_IMAGES_PROJECT_ID)
 release: TAG = $(BASE_VERSION)
@@ -950,7 +848,7 @@ clean-swagger-docs:
 clean-third-party:
 	rm -rf $(REPOSITORY_ROOT)/third_party/
 
-clean: clean-images clean-binaries clean-build clean-install-yaml clean-stress-test-tools clean-secrets clean-terraform clean-third-party clean-protos clean-swagger-docs
+clean: clean-binaries clean-build clean-install-yaml clean-stress-test-tools clean-secrets clean-terraform clean-third-party clean-protos clean-swagger-docs
 
 proxy-frontend: build/toolchain/bin/kubectl$(EXE_EXTENSION)
 	@echo "Frontend Health: http://localhost:$(FRONTEND_PORT)/healthz"
