@@ -44,8 +44,11 @@ prometheus.io/path: {{ .prometheus.endpoint }}
 imagePullPolicy: {{ .Values.global.image.pullPolicy }}
 resources:
   requests:
-    memory: 50Mi
-    cpu: 50m
+    memory: 100Mi
+    cpu: 100m
+  limits:
+    memory: 500Mi
+    cpu: 1000m
 {{- end -}}
 
 {{- define "openmatch.volumemounts.configs" -}}

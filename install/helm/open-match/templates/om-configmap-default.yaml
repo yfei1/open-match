@@ -90,7 +90,7 @@ data:
       pool:
         maxIdle: 200
         maxActive: 0
-        idleTimeout: 60s
+        idleTimeout: 300s
         healthCheckTimeout: 100ms
       ignoreLists:
         ttl: {{ .Values.redis.ignoreLists.ttl }}

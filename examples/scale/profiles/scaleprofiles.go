@@ -39,9 +39,9 @@ var (
 	platforms = []string{
 		"platform.pc",
 		"platform.xbox",
-		"platform.ps",
-		"platform.nintendo",
-		"platform.any",
+		"platform.a",
+		"platform.b",
+		"platform.c",
 	}
 	playlists = []string{
 		"mmr.playlist1",

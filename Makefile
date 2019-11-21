@@ -270,7 +270,7 @@ install-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$
 		--set open-match-customize.evaluator.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -W -f -
 
 # install-scale-chart will wait for installing open-match-core with telemetry supports then install open-match-scale chart.
-install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/ 
+install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) build/toolchain/bin/ko$(EXE_EXTENSION) install/helm/open-match/secrets/ 
 	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
@@ -383,6 +383,10 @@ install-kubernetes-tools: build/toolchain/bin/kubectl$(EXE_EXTENSION) build/tool
 install-protoc-tools: build/toolchain/bin/protoc$(EXE_EXTENSION) build/toolchain/bin/protoc-gen-go$(EXE_EXTENSION) build/toolchain/bin/protoc-gen-grpc-gateway$(EXE_EXTENSION) build/toolchain/bin/protoc-gen-swagger$(EXE_EXTENSION)
 install-openmatch-tools: build/toolchain/bin/certgen$(EXE_EXTENSION) build/toolchain/bin/reaper$(EXE_EXTENSION)
 
+build/toolchain/bin/ko$(EXE_EXTENSION):
+	mkdir -p $(TOOLCHAIN_BIN)
+	cd $(TOOLCHAIN_BIN) && $(GO) build -pkgdir . github.com/google/ko/cmd/ko
+
 build/toolchain/bin/helm$(EXE_EXTENSION):
 	mkdir -p $(TOOLCHAIN_BIN)
 	mkdir -p $(TOOLCHAIN_DIR)/temp-helm
@@ -467,10 +471,6 @@ build/toolchain/bin/protoc-gen-go$(EXE_EXTENSION):
 	mkdir -p $(TOOLCHAIN_BIN)
 	cd $(TOOLCHAIN_BIN) && $(GO) build -i -pkgdir . github.com/golang/protobuf/protoc-gen-go
 
-build/toolchain/bin/ko$(EXE_EXTENSION):
-	mkdir -p $(TOOLCHAIN_BIN)
-	cd $(TOOLCHAIN_BIN) && $(GO) build -pkgdir . github.com/google/ko/cmd/ko
-
 build/toolchain/bin/protoc-gen-grpc-gateway$(EXE_EXTENSION):
 	cd $(TOOLCHAIN_BIN) && $(GO) build -i -pkgdir . github.com/grpc-ecosystem/grpc-gateway/protoc-gen-grpc-gateway
 
@@ -535,7 +535,7 @@ delete-kind-cluster: build/toolchain/bin/kind$(EXE_EXTENSION) build/toolchain/bi
 	-$(KIND) delete cluster
 
 create-gke-cluster: GKE_VERSION = 1.14.8-gke.17 # gcloud beta container get-server-config --zone us-west1-a
-create-gke-cluster: GKE_CLUSTER_SHAPE_FLAGS = --machine-type n1-standard-4 --enable-autoscaling --min-nodes 1 --num-nodes 3 --max-nodes 10 --disk-size 50
+create-gke-cluster: GKE_CLUSTER_SHAPE_FLAGS = --machine-type n1-highcpu-16 --num-nodes 4 --disk-size 50
 create-gke-cluster: GKE_FUTURE_COMPAT_FLAGS = --no-enable-basic-auth --no-issue-client-certificate --enable-ip-alias --metadata disable-legacy-endpoints=true --enable-autoupgrade
 create-gke-cluster: build/toolchain/bin/kubectl$(EXE_EXTENSION) gcloud
 	$(GCLOUD) beta $(GCP_PROJECT_FLAG) container clusters create $(GKE_CLUSTER_NAME) $(GCP_LOCATION_FLAG) $(GKE_CLUSTER_SHAPE_FLAGS) $(GKE_FUTURE_COMPAT_FLAGS) $(GKE_CLUSTER_FLAGS) \
@@ -670,6 +670,8 @@ cmd/swaggerui/kodata:
 cmd/demo-first-match/kodata:
 	mkdir -p $(REPOSITORY_ROOT)/cmd/demo-first-match/kodata
 	cp -r $(REPOSITORY_ROOT)/examples/demo/static $(REPOSITORY_ROOT)/cmd/demo-first-match/kodata
+
+build/cmd: $(foreach CMD,$(CMDS),build/cmd/$(CMD))
 
 all: service-binaries example-binaries tools-binaries
 
