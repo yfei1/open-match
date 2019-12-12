@@ -681,7 +681,7 @@ service-binaries: cmd/mmlogic/mmlogic$(EXE_EXTENSION) cmd/synchronizer/synchroni
 
 example-binaries: example-mmf-binaries example-evaluator-binaries
 example-mmf-binaries: examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION) examples/functions/golang/pool/pool$(EXE_EXTENSION)  examples/functions/golang/rosterbased/rosterbased$(EXE_EXTENSION)
-example-evaluator-binaries: examples/evaluator/golang/simple/simple$(EXE_EXTENSION)
+example-evaluator-binaries: test/evaluator/simple$(EXE_EXTENSION)
 
 examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION): pkg/pb/mmlogic.pb.go pkg/pb/mmlogic.pb.gw.go api/mmlogic.swagger.json pkg/pb/matchfunction.pb.go pkg/pb/matchfunction.pb.gw.go api/matchfunction.swagger.json
 	cd $(REPOSITORY_ROOT)/examples/functions/golang/soloduel; $(GO_BUILD_COMMAND)
@@ -692,8 +692,8 @@ examples/functions/golang/rosterbased/rosterbased$(EXE_EXTENSION): pkg/pb/mmlogi
 examples/functions/golang/pool/pool$(EXE_EXTENSION): pkg/pb/mmlogic.pb.go pkg/pb/mmlogic.pb.gw.go api/mmlogic.swagger.json pkg/pb/matchfunction.pb.go pkg/pb/matchfunction.pb.gw.go api/matchfunction.swagger.json
 	cd $(REPOSITORY_ROOT)/examples/functions/golang/pool; $(GO_BUILD_COMMAND)
 
-examples/evaluator/golang/simple/simple$(EXE_EXTENSION): pkg/pb/evaluator.pb.go pkg/pb/evaluator.pb.gw.go api/evaluator.swagger.json
-	cd $(REPOSITORY_ROOT)/examples/evaluator/golang/simple; $(GO_BUILD_COMMAND)
+test/evaluator/simple$(EXE_EXTENSION): pkg/pb/evaluator.pb.go pkg/pb/evaluator.pb.gw.go api/evaluator.swagger.json
+	cd $(REPOSITORY_ROOT)/test/evaluator; $(GO_BUILD_COMMAND)
 
 tools-binaries: tools/certgen/certgen$(EXE_EXTENSION) tools/reaper/reaper$(EXE_EXTENSION)
 
@@ -817,7 +817,7 @@ clean-binaries:
 	rm -rf $(REPOSITORY_ROOT)/examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/examples/functions/golang/rosterbased/rosterbased$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/examples/functions/golang/pool/pool$(EXE_EXTENSION)
-	rm -rf $(REPOSITORY_ROOT)/examples/functions/golang/simple/evaluator$(EXE_EXTENSION)
+	rm -rf $(REPOSITORY_ROOT)/test/evaluator/simple$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/cmd/swaggerui/swaggerui$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/tools/certgen/certgen$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/tools/reaper/reaper$(EXE_EXTENSION)
