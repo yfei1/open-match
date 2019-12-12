@@ -271,7 +271,7 @@ install-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$
 
 # install-scale-chart will wait for installing open-match-core with telemetry supports then install open-match-scale chart.
 install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) build/toolchain/bin/ko$(EXE_EXTENSION) install/helm/open-match/secrets/ 
-	$(HELM) template $(OPEN_MATCH_HELM_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
+	$(HELM) template $(OPEN_MATCH_HELM_NAME) $(HELM_KO_FLAGS) install/helm/open-match -f values-production.yaml \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.function.enabled=true \
@@ -282,7 +282,7 @@ install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EX
 		--set global.telemetry.prometheus.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -f -
 
 install-scale-chart2:
-	$(HELM) template $(OPEN_MATCH_HELM_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) \
+	$(HELM) template $(OPEN_MATCH_HELM_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) -f values-production.yaml \
 		--set open-match-core.enabled=false \
 		--set open-match-scale.enabled=true \
 		--set global.logging.rpc.enabled=false | $(KO) apply -t $(TAG) -n open-match -P -f -

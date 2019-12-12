@@ -48,35 +48,35 @@ swaggerui: &swaggerui
   httpPort: 51500
   portType: ClusterIP
   replicas: 1
-  image: open-match.dev/open-match/cmd/swaggerui
+  image: openmatch-swaggerui
 mmlogic: &mmlogic
   hostName: om-mmlogic
   grpcPort: 50503
   httpPort: 51503
   portType: ClusterIP
   replicas: 3
-  image: open-match.dev/open-match/cmd/mmlogic
+  image: openmatch-mmlogic
 frontend: &frontend
   hostName: om-frontend
   grpcPort: 50504
   httpPort: 51504
   portType: ClusterIP
   replicas: 3
-  image: open-match.dev/open-match/cmd/frontend
+  image: openmatch-frontend
 backend: &backend
   hostName: om-backend
   grpcPort: 50505
   httpPort: 51505
   portType: ClusterIP
   replicas: 3
-  image: open-match.dev/open-match/cmd/backend
+  image: openmatch-backend
 synchronizer: &synchronizer
   hostName: om-synchronizer
   grpcPort: 50506
   httpPort: 51506
   portType: ClusterIP
   replicas: 1
-  image: open-match.dev/open-match/cmd/synchronizer
+  image: openmatch-synchronizer
 evaluator: &evaluator
   hostName: om-evaluator
   grpcPort: 50508
@@ -116,17 +116,19 @@ redis:
   master:
     disableCommands: [] # don't disable 'FLUSH-' commands
     resources:
-      requests: {}
+      requests:
+        memory: 2Gi
+        cpu: 2
   metrics:
     enabled: true
   cluster:
-    slaveCount: 2
+    slaveCount: 3
   serviceAccount:
     create: true
     name: open-match-redis-service
   sysctlImage:
     # Enable this setting in production if you are running Open Match under Linux environment
-    enabled: true
+    enabled: false
     mountHostSys: true
     # Redis may require some changes in the kernel of the host machine to work as expected,
     # in particular increasing the somaxconn value and disabling transparent huge pages.
@@ -137,7 +139,6 @@ redis:
       - |-
         install_packages procps
         sysctl -w net.core.somaxconn=100000
-        sysctl -w fs.file-max=100000
         echo never > /host-sys/kernel/mm/transparent_hugepage/enabled # Disable THP support
 
 ###############################################################################################################################
@@ -203,11 +204,8 @@ global:
       targetCPUUtilizationPercentage: 80
     resources:
       requests:
-        memory: 100Mi
-        cpu: 100m
-      limits:
-        memory: 100Mi
-        cpu: 100m
+        memory: 1Gi
+        cpu: 1500m
     # Defines a service account which provides an identity for processes that run in a Pod in Open Match.
     serviceAccount: open-match-unprivileged-service
     # Use this field if you need to override the port type for all services defined in this chart
@@ -230,8 +228,8 @@ global:
 
   # Use this field if you need to override the image registry and image tag for all services defined in this chart
   image:
-    registry:
-    tag:
+    registry: gcr.io/open-match-public-images
+    tag: 0.0.0-dev
     pullPolicy: Always
 
 
@@ -243,7 +241,7 @@ global:
       enabled: true
     jaeger:
       enabled: false
-      samplerFraction: 0.01 # Configures a sampler that samples a given fraction of traces.
+      samplerFraction: 0.005 # Configures a sampler that samples a given fraction of traces.
       agentEndpoint: "open-match-jaeger-agent:6831"
       collectorEndpoint: "http://open-match-jaeger-collector:14268/api/traces"
     prometheus:

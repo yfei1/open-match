@@ -43,12 +43,7 @@ prometheus.io/path: {{ .prometheus.endpoint }}
 {{- define "openmatch.container.common" -}}
 imagePullPolicy: {{ .Values.global.image.pullPolicy }}
 resources:
-  requests:
-    memory: 100Mi
-    cpu: 100m
-  limits:
-    memory: 500Mi
-    cpu: 1000m
+{{- toYaml .Values.global.kubernetes.resources | nindent 2 }}
 {{- end -}}
 
 {{- define "openmatch.volumemounts.configs" -}}
@@ -121,7 +116,7 @@ readinessProbe:
 {{- end -}}
 
 {{- define "openmatch.HorizontalPodAutoscaler.spec.common" -}}
-minReplicas: 1
-maxReplicas: 50
-targetCPUUtilizationPercentage: 80
+minReplicas: {{ .Values.global.kubernetes.horizontalPodAutoScaler.minReplicas }}
+maxReplicas: {{ .Values.global.kubernetes.horizontalPodAutoScaler.maxReplicas }}
+targetCPUUtilizationPercentage: {{ .Values.global.kubernetes.horizontalPodAutoScaler.targetCPUUtilizationPercentage }}
 {{- end -}}
