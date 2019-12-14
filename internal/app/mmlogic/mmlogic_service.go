@@ -73,6 +73,8 @@ func doQueryTickets(ctx context.Context, pool *pb.Pool, pageSize int, sender fun
 		return err
 	}
 
+	logger.Info("Testestest")
+
 	return nil
 }
 

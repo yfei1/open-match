@@ -26,7 +26,7 @@ evaluator:
   enabled: false
   replicas: 3
   portType: ClusterIP
-  image: open-match.dev/open-match/examples/evaluator/golang/simple
+  image: open-match.dev/open-match/test/evaluator
 
 evaluatorConfigs: 
   # We use harness to implement the MMFs. MMF itself only requires one configmap but harness expects two,

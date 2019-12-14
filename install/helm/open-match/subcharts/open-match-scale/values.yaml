@@ -15,13 +15,13 @@
 scaleFrontend:
   hostName: om-scale-frontend
   httpPort: 51509
-  replicas: 1
+  replicas: 0
   image: open-match.dev/open-match/cmd/scale-frontend
 
 scaleBackend:
   hostName: om-scale-backend
   httpPort: 51510
-  replicas: 1
+  replicas: 4
   image: open-match.dev/open-match/cmd/scale-backend
 
 configs:
@@ -36,7 +36,7 @@ configs:
 
 testConfig:
   profile: scaleprofiles
-  concurrentCreates: 500
+  concurrentCreates: 5
   regions:
     - region.europe-west1
     - region.europe-west2

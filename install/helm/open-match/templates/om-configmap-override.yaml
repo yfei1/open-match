@@ -32,6 +32,6 @@ data:
         httpport: "{{ .Values.evaluator.httpPort }}"
     synchronizer:
       enabled: true
-      registrationIntervalMs: 3000ms
-      proposalCollectionIntervalMs: 15000ms
+      registrationIntervalMs: 100ms
+      proposalCollectionIntervalMs: 1200ms
 {{- end }}

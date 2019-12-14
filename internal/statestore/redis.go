@@ -128,7 +128,7 @@ func (rb *redisBackend) connect(ctx context.Context) (redis.Conn, error) {
 	if err != nil {
 		redisLogger.WithFields(logrus.Fields{
 			"error": err.Error(),
-		}).Error("failed to connect to redis")
+		}).Error("failed to connect to redis, time passed %d", time.Since(startTime).Seconds())
 		return nil, status.Errorf(codes.Unavailable, "%v", err)
 	}
 	telemetry.RecordNUnitMeasurement(ctx, mRedisConnLatencyMs, time.Since(startTime).Milliseconds())

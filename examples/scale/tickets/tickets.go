@@ -22,42 +22,42 @@ import (
 )
 
 var (
-	regions = []string{
+	Regions = []string{
 		"region.europe0",
 		"region.europe1",
 		"region.europe2",
 		"region.europe3",
-		"region.europe4",
-		"region.europe5",
-		"region.europe6",
-		"region.europe7",
-		"region.europe8",
-		"region.europe9",
+		// "region.europe4",
+		// "region.europe5",
+		// "region.europe6",
+		// "region.europe7",
+		// "region.europe8",
+		// "region.europe9",
 	}
-	platforms = []string{
+	Platforms = []string{
 		"platform.pc",
 		"platform.xbox",
 		"platform.ps",
 		"platform.nintendo",
 		"platform.any",
 	}
-	playlists = []string{
-		"mmr.playlist1",
-		"mmr.playlist2",
-		"mmr.playlist3",
-		"mmr.playlist4",
-		"mmr.playlist5",
-		"mmr.playlist6",
-		"mmr.playlist7",
-		"mmr.playlist8",
-		"mmr.playlist9",
-		"mmr.playlist10",
-		"mmr.playlist11",
-		"mmr.playlist12",
-		"mmr.playlist13",
-		"mmr.playlist14",
-		"mmr.playlist15",
-	}
+	// Playlists = []string{
+	// 	"mmr.playlist1",
+	// 	"mmr.playlist2",
+	// 	"mmr.playlist3",
+	// 	// "mmr.playlist4",
+	// 	// "mmr.playlist5",
+	// 	// "mmr.playlist6",
+	// 	// "mmr.playlist7",
+	// 	// "mmr.playlist8",
+	// 	// "mmr.playlist9",
+	// 	// "mmr.playlist10",
+	// 	// "mmr.playlist11",
+	// 	// "mmr.playlist12",
+	// 	// "mmr.playlist13",
+	// 	// "mmr.playlist14",
+	// 	// "mmr.playlist15",
+	// }
 )
 
 // Ticket generates a ticket for profile scale testing
@@ -70,7 +70,7 @@ func Ticket() *pb.Ticket {
 
 	addRegionsAttributes(ticket.SearchFields)
 	addPlatformAttributes(ticket.SearchFields)
-	addPlaylistAttributes(ticket.SearchFields)
+	// addPlaylistAttributes(ticket.SearchFields)
 
 	return ticket
 }
@@ -80,30 +80,30 @@ func addRegionsAttributes(fields *pb.SearchFields) {
 	regionCount := rand.Intn(3) + 1
 
 	// Pick a random indices for playlists.
-	regionIndex := randomInRange(len(regions)-1, 0, regionCount)
+	regionIndex := randomInRange(len(Regions)-1, 0, regionCount)
 
 	// Add an attribute for each picked region
 	for r := range regionIndex {
-		fields.DoubleArgs[regions[r]] = float64(time.Now().Unix())
+		fields.DoubleArgs[Regions[r]] = float64(time.Now().Unix())
 	}
 }
 
 func addPlatformAttributes(fields *pb.SearchFields) {
-	fields.DoubleArgs[platforms[rand.Intn(len(platforms))]] = float64(time.Now().Unix())
+	fields.DoubleArgs[Platforms[rand.Intn(len(Platforms))]] = float64(time.Now().Unix())
 }
 
-func addPlaylistAttributes(fields *pb.SearchFields) {
-	// Each ticket can have 1-3 playlists. Pick a random number of playlists between 1 and 3
-	plCount := rand.Intn(3) + 1
+// func addPlaylistAttributes(fields *pb.SearchFields) {
+// 	// Each ticket can have 1-3 playlists. Pick a random number of playlists between 1 and 3
+// 	plCount := rand.Intn(3) + 1
 
-	// Pick a random indices for playlists.
-	plIndex := randomInRange(len(playlists)-1, 0, plCount)
+// 	// Pick a random indices for playlists.
+// 	plIndex := randomInRange(len(Playlists)-1, 0, plCount)
 
-	// For each of the picked playlist, add an attribute with a mmr from a normal distribution
-	for pl := range plIndex {
-		fields.DoubleArgs[playlists[pl]] = normalDist(40, 0, 100, 20)
-	}
-}
+// 	// For each of the picked playlist, add an attribute with a mmr from a normal distribution
+// 	for pl := range plIndex {
+// 		fields.DoubleArgs[Playlists[pl]] = normalDist(40, 0, 100, 20)
+// 	}
+// }
 
 func randomInRange(max int, min int, count int) []int {
 	if count <= 0 {

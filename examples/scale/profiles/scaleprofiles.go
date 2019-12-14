@@ -18,90 +18,54 @@ import (
 	"fmt"
 	"math"
 
+	"open-match.dev/open-match/examples/scale/tickets"
 	"open-match.dev/open-match/pkg/pb"
 )
 
-// The current setup generates 4000 profiles in total.
-// Please add/remove indices from the slices below to modify the number of profiles,
-var (
-	regions = []string{
-		"region.europe0",
-		"region.europe1",
-		"region.europe2",
-		"region.europe3",
-		"region.europe4",
-		"region.europe5",
-		"region.europe6",
-		"region.europe7",
-		"region.europe8",
-		"region.europe9",
-	}
-	platforms = []string{
-		"platform.pc",
-		"platform.xbox",
-		"platform.a",
-		"platform.b",
-		"platform.c",
-	}
-	playlists = []string{
-		"mmr.playlist1",
-		"mmr.playlist2",
-		"mmr.playlist3",
-		"mmr.playlist4",
-		"mmr.playlist5",
-		"mmr.playlist6",
-		"mmr.playlist7",
-		"mmr.playlist8",
-	}
-	gameSizeMap = map[string]int{
-		"mmr.playlist1": 4,
-	}
-)
-
 func scaleProfiles() []*pb.MatchProfile {
-	mmrRanges := makeRangeFilters(&rangeConfig{
-		name:         "mmr",
-		min:          0,
-		max:          100,
-		rangeSize:    10,
-		rangeOverlap: 0,
-	})
+	// mmrRanges := makeRangeFilters(&rangeConfig{
+	// 	name:         "mmr",
+	// 	min:          0,
+	// 	max:          100,
+	// 	rangeSize:    10,
+	// 	rangeOverlap: 0,
+	// })
 
 	var profiles []*pb.MatchProfile
-	for _, region := range regions {
-		for _, platform := range platforms {
-			for _, playlist := range playlists {
-				for _, mmrRange := range mmrRanges {
-					poolName := fmt.Sprintf("%s_%s_%s_%v_%v", region, platform, playlist, mmrRange.min, mmrRange.max)
-					p := &pb.Pool{
-						Name: poolName,
-						DoubleRangeFilters: []*pb.DoubleRangeFilter{
-							{
-								DoubleArg: region,
-								Min:       0,
-								Max:       math.MaxFloat64,
-							},
-							{
-								DoubleArg: platform,
-								Min:       0,
-								Max:       math.MaxFloat64,
-							},
-							{
-								DoubleArg: playlist,
-								Min:       float64(mmrRange.min),
-								Max:       float64(mmrRange.max),
-							},
-						},
-					}
-					prof := &pb.MatchProfile{
-						Name:    fmt.Sprintf("Profile_%s", poolName),
-						Pools:   []*pb.Pool{p},
-						Rosters: []*pb.Roster{makeRosterSlots(p.GetName(), gameSizeMap[playlist])},
-					}
-
-					profiles = append(profiles, prof)
-				}
+	for _, region := range tickets.Regions {
+		for _, platform := range tickets.Platforms {
+			// for _, playlist := range tickets.Playlists {
+			// for _, mmrRange := range mmrRanges {
+			poolName := fmt.Sprintf("%s_%s", region, platform)
+			p := &pb.Pool{
+				Name: poolName,
+				DoubleRangeFilters: []*pb.DoubleRangeFilter{
+					{
+						DoubleArg: region,
+						Min:       0,
+						Max:       math.MaxFloat64,
+					},
+					{
+						DoubleArg: platform,
+						Min:       0,
+						Max:       math.MaxFloat64,
+					},
+					// {
+					// 	DoubleArg: playlist,
+					// 	Min:       float64(mmrRange.min),
+					// 	Max:       float64(mmrRange.max),
+					// },
+				},
 			}
+			prof := &pb.MatchProfile{
+				Name:    fmt.Sprintf("Profile_%s", poolName),
+				Pools:   []*pb.Pool{p},
+				Rosters: []*pb.Roster{makeRosterSlots(p.GetName(), 4)},
+			}
+
+			profiles = append(profiles, prof)
+			// }
+			// }
 		}
 	}
 

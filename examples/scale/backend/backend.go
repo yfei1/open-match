@@ -24,7 +24,6 @@ import (
 	"time"
 
 	"github.com/sirupsen/logrus"
-	"go.opencensus.io/trace"
 	"open-match.dev/open-match/examples/scale/profiles"
 	"open-match.dev/open-match/internal/config"
 	"open-match.dev/open-match/internal/logging"
@@ -40,8 +39,8 @@ var (
 
 	// The buffered channels attempt to decouple fetch, assign and delete. It is
 	// best effort and these operations may still block each other if buffers are full.
-	matches   = make(chan *pb.Match, 2000)
-	deleteIds = make(chan string, 2000)
+	matches   = make(chan *pb.Match, 10000)
+	deleteIds = make(chan string, 10000)
 
 	errMap     = &sync.Map{}
 	matchCount uint64
@@ -76,9 +75,11 @@ func Run() {
 	defer feConn.Close()
 	fe := pb.NewFrontendClient(feConn)
 
-	go doFetch(cfg, be)
-	go doAssign(be)
-	go doDelete(fe)
+	for i := 0; i < 10; i++ {
+		go doFetch(cfg, be)
+		go doAssign(be)
+		go doDelete(fe)
+	}
 
 	select {}
 
@@ -102,10 +103,10 @@ func doFetch(cfg config.View, be pb.BackendClient) {
 
 		// Wait for all FetchMatches calls to complete before proceeding.
 		wg.Wait()
-		errMap.Range(func(k interface{}, v interface{}) bool {
-			logger.Infof("Got error %s: %#v", k, v)
-			return true
-		})
+		// errMap.Range(func(k interface{}, v interface{}) bool {
+		// 	logger.Infof("Got error %s: %#v", k, v)
+		// 	return true
+		// })
 		logger.Infof(
 			"FetchedMatches:%v, AssignedTickets:%v, DeletedTickets:%v in time %v, Total profiles: %v",
 			atomic.LoadUint64(&matchCount),
@@ -128,17 +129,17 @@ func fetch(be pb.BackendClient, p *pb.MatchProfile) {
 			Profiles: []*pb.MatchProfile{p},
 		}
 
-		ctx, span := trace.StartSpan(context.Background(), "scale.backend/FetchMatches")
-		defer span.End()
+		// ctx, span := trace.StartSpan(context.Background(), "scale.backend/FetchMatches")
+		// defer span.End()
 
-		stream, err := be.FetchMatches(ctx, req)
+		stream, err := be.FetchMatches(context.Background(), req)
 		if err != nil {
-			errMsg := fmt.Sprintf("failed to get available stream client: %w", err)
-			errRead, ok := errMap.Load(errMsg)
-			if !ok {
-				errRead = 0
-			}
-			errMap.Store(errMsg, errRead.(int)+1)
+			// errMsg := fmt.Sprintf("failed to get available stream client: %w", err)
+			// errRead, ok := errMap.Load(errMsg)
+			// if !ok {
+			// 	errRead = 0
+			// }
+			// errMap.Store(errMsg, errRead.(int)+1)
 			return
 		}
 
@@ -149,12 +150,12 @@ func fetch(be pb.BackendClient, p *pb.MatchProfile) {
 			}
 
 			if err != nil {
-				errMsg := fmt.Sprintf("failed to stream in the halfway: %w", err)
-				errRead, ok := errMap.Load(errMsg)
-				if !ok {
-					errRead = 0
-				}
-				errMap.Store(errMsg, errRead.(int)+1)
+				// errMsg := fmt.Sprintf("failed to stream in the halfway: %w", err)
+				// errRead, ok := errMap.Load(errMsg)
+				// if !ok {
+				// 	errRead = 0
+				// }
+				// errMap.Store(errMsg, errRead.(int)+1)
 				return
 			}
 
@@ -184,12 +185,12 @@ func doAssign(be pb.BackendClient) {
 		}
 
 		if _, err := be.AssignTickets(context.Background(), req); err != nil {
-			errMsg := fmt.Sprintf("failed to assign tickets: %w", err)
-			errRead, ok := errMap.Load(errMsg)
-			if !ok {
-				errRead = 0
-			}
-			errMap.Store(errMsg, errRead.(int)+1)
+			// errMsg := fmt.Sprintf("failed to assign tickets: %w", err)
+			// errRead, ok := errMap.Load(errMsg)
+			// if !ok {
+			// 	errRead = 0
+			// }
+			// errMap.Store(errMsg, errRead.(int)+1)
 		}
 
 		atomic.AddUint64(&assigned, uint64(len(ids)))
@@ -208,12 +209,12 @@ func doDelete(fe pb.FrontendClient) {
 		}
 
 		if _, err := fe.DeleteTicket(context.Background(), req); err != nil {
-			errMsg := fmt.Sprintf("failed to delete tickets: %w", err)
-			errRead, ok := errMap.Load(errMsg)
-			if !ok {
-				errRead = 0
-			}
-			errMap.Store(errMsg, errRead.(int)+1)
+			// errMsg := fmt.Sprintf("failed to delete tickets: %w", err)
+			// errRead, ok := errMap.Load(errMsg)
+			// if !ok {
+			// 	errRead = 0
+			// }
+			// errMap.Store(errMsg, errRead.(int)+1)
 		}
 
 		atomic.AddUint64(&deleted, 1)
