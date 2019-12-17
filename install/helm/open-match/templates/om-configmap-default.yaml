@@ -81,7 +81,7 @@ data:
         size: 10000
 
     redis:
-      hostname: {{ .Values.redis.fullnameOverride }}-master.{{ .Release.Namespace }}.svc.cluster.local
+      hostname: 10.77.164.107
       port: {{ .Values.redis.redisPort }}
       user: {{ .Values.redis.user }}
 {{- if .Values.redis.usePassword }}
