@@ -17,12 +17,12 @@ package statestore
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	"time"
 
 	"github.com/cenkalti/backoff"
 	"github.com/golang/protobuf/proto"
 	"github.com/gomodule/redigo/redis"
+	"github.com/mna/redisc"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -43,8 +43,9 @@ var (
 )
 
 type redisBackend struct {
-	healthCheckPool *redis.Pool
-	redisPool       *redis.Pool
+	healthCheckPool *redisc.Cluster
+	redisPool       *redisc.Cluster
+	readOnlyPool    *redisc.Cluster
 	cfg             config.View
 }
 
@@ -58,82 +59,185 @@ func newRedis(cfg config.View) Service {
 	// As per https://www.iana.org/assignments/uri-schemes/prov/redis
 	// redis://user:secret@localhost:6379/0?foo=bar&qux=baz
 
-	// Add redis user and password to connection url if they exist
-	redisURL := "redis://"
-	maskedURL := redisURL
+	pool := &redisc.Cluster{
+		StartupNodes: []string{
+			"redis-shard0-0.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard0-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-2.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-3.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-4.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-5.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard1-0.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard1-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-2.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-3.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-4.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-5.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard2-0.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard2-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-2.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-3.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-4.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-5.kubedb.open-match.svc.cluster.local:6379",
+		},
+		PoolWaitTime: 0,
+		DialOptions:  []redis.DialOption{redis.DialConnectTimeout(cfg.GetDuration("redis.pool.idleTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.idleTimeout"))},
+		CreatePool: func(address string, options ...redis.DialOption) (*redis.Pool, error) {
+			// Add redis user and password to connection url if they exist
+			maskedURL := address
 
-	passwordFile := cfg.GetString("redis.passwordPath")
-	if len(passwordFile) > 0 {
-		redisLogger.Debugf("loading Redis password from file %s", passwordFile)
-		passwordData, err := ioutil.ReadFile(passwordFile)
-		if err != nil {
-			redisLogger.Fatalf("cannot read Redis password from file %s, desc: %s", passwordFile, err.Error())
-		}
-		redisURL += fmt.Sprintf("%s:%s@", cfg.GetString("redis.user"), string(passwordData))
-		maskedURL += fmt.Sprintf("%s:%s@", cfg.GetString("redis.user"), "**********")
+			redisLogger.WithField("redisURL", maskedURL).Debug("Attempting to connect to Redis")
+
+			return &redis.Pool{
+				MaxIdle:     cfg.GetInt("redis.pool.maxIdle"),
+				MaxActive:   cfg.GetInt("redis.pool.maxActive"),
+				IdleTimeout: cfg.GetDuration("redis.pool.idleTimeout"),
+				Wait:        true,
+				TestOnBorrow: func(c redis.Conn, _ time.Time) error {
+					_, err := c.Do("PING")
+					return err
+				},
+				Dial: func() (redis.Conn, error) {
+					return redis.DialURL("redis://"+address, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")))
+				},
+			}, nil
+		},
 	}
-	redisURL += cfg.GetString("redis.hostname") + ":" + cfg.GetString("redis.port")
-	maskedURL += cfg.GetString("redis.hostname") + ":" + cfg.GetString("redis.port")
 
-	redisLogger.WithField("redisURL", maskedURL).Debug("Attempting to connect to Redis")
-
-	pool := &redis.Pool{
-		MaxIdle:     cfg.GetInt("redis.pool.maxIdle"),
-		MaxActive:   cfg.GetInt("redis.pool.maxActive"),
-		IdleTimeout: cfg.GetDuration("redis.pool.idleTimeout"),
-		Wait:        true,
-		TestOnBorrow: func(c redis.Conn, _ time.Time) error {
-			_, err := c.Do("PING")
-			return err
+	readOnlyPool := &redisc.Cluster{
+		StartupNodes: []string{
+			"redis-shard0-0.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard0-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-2.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-3.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-4.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-5.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard1-0.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard1-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-2.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-3.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-4.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-5.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard2-0.kubedb.open-match.svc.cluster.local:6379",
+			"redis-shard2-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-2.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-3.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-4.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-5.kubedb.open-match.svc.cluster.local:6379",
 		},
-		DialContext: func(ctx context.Context) (redis.Conn, error) {
-			if ctx.Err() != nil {
-				return nil, ctx.Err()
-			}
-			return redis.DialURL(redisURL, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.idleTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.idleTimeout")))
+		PoolWaitTime: 0,
+		DialOptions:  []redis.DialOption{redis.DialConnectTimeout(cfg.GetDuration("redis.pool.idleTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.idleTimeout"))},
+		CreatePool: func(address string, options ...redis.DialOption) (*redis.Pool, error) {
+			// Add redis user and password to connection url if they exist
+			maskedURL := address
+
+			redisLogger.WithField("redisURL", maskedURL).Debug("Attempting to connect to Redis")
+
+			return &redis.Pool{
+				MaxIdle:     cfg.GetInt("redis.pool.maxIdle"),
+				MaxActive:   cfg.GetInt("redis.pool.maxActive"),
+				IdleTimeout: cfg.GetDuration("redis.pool.idleTimeout"),
+				Wait:        true,
+				TestOnBorrow: func(c redis.Conn, _ time.Time) error {
+					_, err := c.Do("PING")
+					return err
+				},
+				Dial: func() (redis.Conn, error) {
+					return redis.DialURL("redis://"+address, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")))
+				},
+			}, nil
 		},
 	}
-	healthCheckPool := &redis.Pool{
-		MaxIdle:     1,
-		MaxActive:   2,
-		IdleTimeout: cfg.GetDuration("redis.pool.healthCheckTimeout"),
-		Wait:        true,
-		DialContext: func(ctx context.Context) (redis.Conn, error) {
-			if ctx.Err() != nil {
-				return nil, ctx.Err()
-			}
-			return redis.DialURL(redisURL, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")))
+
+	// initialize its mapping
+	if err := pool.Refresh(); err != nil {
+		redisLogger.Fatalf("Refresh failed: %v", err)
+	}
+
+	healthCheckPool := &redisc.Cluster{
+		StartupNodes: []string{
+			"redis-shard0-0.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard0-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard1-1.kubedb.open-match.svc.cluster.local:6379",
+			// "redis-shard2-1.kubedb.open-match.svc.cluster.local:6379",
 		},
+		PoolWaitTime: 0,
+		DialOptions:  []redis.DialOption{redis.DialConnectTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout"))},
+		CreatePool: func(address string, options ...redis.DialOption) (*redis.Pool, error) {
+			// Add redis user and password to connection url if they exist
+			maskedURL := address
+
+			redisLogger.WithField("redisURL", maskedURL).Debug("Attempting to connect to Redis")
+
+			return &redis.Pool{
+				MaxIdle:     1,
+				MaxActive:   5,
+				IdleTimeout: cfg.GetDuration("redis.pool.healthCheckTimeout"),
+				Wait:        true,
+				Dial: func() (redis.Conn, error) {
+					return redis.DialURL("redis://"+address, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")))
+				},
+			}, nil
+		},
+	}
+
+	// initialize its mapping
+	if err := healthCheckPool.Refresh(); err != nil {
+		redisLogger.Fatalf("Refresh failed: %v", err)
 	}
 
 	return &redisBackend{
 		healthCheckPool: healthCheckPool,
 		redisPool:       pool,
+		readOnlyPool:    readOnlyPool,
 		cfg:             cfg,
 	}
 }
 
 // HealthCheck indicates if the database is reachable.
 func (rb *redisBackend) HealthCheck(ctx context.Context) error {
-	poolStats := rb.redisPool.Stats()
-	telemetry.SetGauge(ctx, mRedisConnPoolActive, int64(poolStats.ActiveCount))
-	telemetry.SetGauge(ctx, mRedisConnPoolIdle, int64(poolStats.IdleCount))
+	redisConn := rb.healthCheckPool.Get()
+	defer handleConnectionClose(&redisConn)
 
+	_, err := redisConn.Do("PING")
+	// Encountered an issue getting a connection from the pool.
+	if err != nil {
+		redisLogger.Debugf("healthcheck err: %s", err.Error())
+		return status.Errorf(codes.Unavailable, "%v", err)
+	}
 	return nil
 }
 
 func (rb *redisBackend) connect(ctx context.Context) (redis.Conn, error) {
 	startTime := time.Now()
-	redisConn, err := rb.redisPool.GetContext(ctx)
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Error("failed to connect to redis, time passed %d", time.Since(startTime).Seconds())
-		return nil, status.Errorf(codes.Unavailable, "%v", err)
-	}
+	redisConn := rb.redisPool.Get()
 	telemetry.RecordNUnitMeasurement(ctx, mRedisConnLatencyMs, time.Since(startTime).Milliseconds())
 
-	return redisConn, nil
+	return redisc.RetryConn(redisConn, 2, 50*time.Millisecond)
+}
+
+func (rb *redisBackend) connectReadOnly(ctx context.Context) (redis.Conn, error) {
+	startTime := time.Now()
+	conn, ok := rb.readOnlyPool.Get().(*redisc.Conn)
+	if !ok {
+		redisLogger.WithField("err", "no error :(").Debug("not ok to cast to readonly connection")
+		return nil, nil
+	}
+
+	if err := redisc.ReadOnlyConn(conn); err != nil {
+		redisLogger.WithField("err", err.Error()).Debug("aksudgakjgscagcgae")
+		return nil, err
+	}
+
+	c, err := redisc.RetryConn(conn, 2, 50*time.Millisecond)
+	if err != nil {
+		redisLogger.WithField("err", err.Error()).Debug("failed to retry readonly conn")
+		return nil, err
+	}
+
+	telemetry.RecordNUnitMeasurement(ctx, mRedisConnLatencyMs, time.Since(startTime).Milliseconds())
+
+	return c, nil
 }
 
 // CreateTicket creates a new Ticket in the state storage. If the id already exists, it will be overwritten.
@@ -144,14 +248,14 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 	}
 	defer handleConnectionClose(&redisConn)
 
-	err = redisConn.Send("MULTI")
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"cmd":   "MULTI",
-			"error": err.Error(),
-		}).Error("state storage operation failed")
-		return status.Errorf(codes.Internal, "%v", err)
-	}
+	// err = redisConn.Send("MULTI")
+	// if err != nil {
+	// 	redisLogger.WithFields(logrus.Fields{
+	// 		"cmd":   "MULTI",
+	// 		"error": err.Error(),
+	// 	}).Error("state storage operation failed")
+	// 	return status.Errorf(codes.Internal, "%v", err)
+	// }
 
 	value, err := proto.Marshal(ticket)
 	if err != nil {
@@ -162,7 +266,7 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 
-	err = redisConn.Send("SET", ticket.GetId(), value)
+	_, err = redisConn.Do("SET", ticket.GetId(), value)
 	if err != nil {
 		redisLogger.WithFields(logrus.Fields{
 			"cmd":   "SET",
@@ -175,7 +279,7 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 	if rb.cfg.IsSet("redis.expiration") {
 		redisTTL := rb.cfg.GetInt("redis.expiration")
 		if redisTTL > 0 {
-			err = redisConn.Send("EXPIRE", ticket.GetId(), redisTTL)
+			_, err = redisConn.Do("EXPIRE", ticket.GetId(), redisTTL)
 			if err != nil {
 				redisLogger.WithFields(logrus.Fields{
 					"cmd":   "EXPIRE",
@@ -188,15 +292,15 @@ func (rb *redisBackend) CreateTicket(ctx context.Context, ticket *pb.Ticket) err
 		}
 	}
 
-	_, err = redisConn.Do("EXEC")
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"cmd":   "EXEC",
-			"key":   ticket.GetId(),
-			"error": err.Error(),
-		}).Error("failed to create ticket in state storage")
-		return status.Errorf(codes.Internal, "%v", err)
-	}
+	// _, err = redisConn.Do("EXEC")
+	// if err != nil {
+	// 	redisLogger.WithFields(logrus.Fields{
+	// 		"cmd":   "EXEC",
+	// 		"key":   ticket.GetId(),
+	// 		"error": err.Error(),
+	// 	}).Error("failed to create ticket in state storage")
+	// 	return status.Errorf(codes.Internal, "%v", err)
+	// }
 
 	return nil
 }
@@ -283,14 +387,14 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 
 	indexedFields := extractIndexedFields(ticket)
 
-	err = redisConn.Send("MULTI")
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"cmd":   "MULTI",
-			"error": err.Error(),
-		}).Error("state storage operation failed")
-		return status.Errorf(codes.Internal, "%v", err)
-	}
+	// err = redisConn.Send("MULTI")
+	// if err != nil {
+	// 	redisLogger.WithFields(logrus.Fields{
+	// 		"cmd":   "MULTI",
+	// 		"error": err.Error(),
+	// 	}).Error("state storage operation failed")
+	// 	return status.Errorf(codes.Internal, "%v", err)
+	// }
 
 	{
 		command := make([]interface{}, 0, 1+len(indexedFields))
@@ -298,7 +402,7 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 		for index := range indexedFields {
 			command = append(command, index)
 		}
-		err = redisConn.Send("SADD", command...)
+		_, err = redisConn.Do("SADD", command...)
 		if err != nil {
 			redisLogger.WithFields(logrus.Fields{
 				"cmd":     "SADD",
@@ -312,7 +416,7 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 
 	for k, v := range indexedFields {
 		// Index the DoubleArg by value.
-		err = redisConn.Send("ZADD", k, v, ticket.GetId())
+		_, err = redisConn.Do("ZADD", k, v, ticket.GetId())
 		if err != nil {
 			redisLogger.WithFields(logrus.Fields{
 				"cmd":       "ZADD",
@@ -326,15 +430,15 @@ func (rb *redisBackend) IndexTicket(ctx context.Context, ticket *pb.Ticket) erro
 	}
 
 	// Run pipelined Redis commands.
-	_, err = redisConn.Do("EXEC")
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"cmd":   "EXEC",
-			"id":    ticket.GetId(),
-			"error": err.Error(),
-		}).Error("failed to index the ticket")
-		return status.Errorf(codes.Internal, "%v", err)
-	}
+	// _, err = redisConn.Do("EXEC")
+	// if err != nil {
+	// 	redisLogger.WithFields(logrus.Fields{
+	// 		"cmd":   "EXEC",
+	// 		"id":    ticket.GetId(),
+	// 		"error": err.Error(),
+	// 	}).Error("failed to index the ticket")
+	// 	return status.Errorf(codes.Internal, "%v", err)
+	// }
 
 	return nil
 }
@@ -361,17 +465,17 @@ func (rb *redisBackend) DeindexTicket(ctx context.Context, id string) error {
 		return nil
 	}
 
-	err = redisConn.Send("MULTI")
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"cmd":   "MULTI",
-			"error": err.Error(),
-		}).Error("state storage operation failed")
-		return status.Errorf(codes.Internal, "%v", err)
-	}
+	// err = redisConn.Send("MULTI")
+	// if err != nil {
+	// 	redisLogger.WithFields(logrus.Fields{
+	// 		"cmd":   "MULTI",
+	// 		"error": err.Error(),
+	// 	}).Error("state storage operation failed")
+	// 	return status.Errorf(codes.Internal, "%v", err)
+	// }
 
 	for _, index := range indices {
-		err = redisConn.Send("ZREM", index, id)
+		_, err = redisConn.Do("ZREM", index, id)
 		if err != nil {
 			redisLogger.WithFields(logrus.Fields{
 				"cmd":   "ZREM",
@@ -383,7 +487,7 @@ func (rb *redisBackend) DeindexTicket(ctx context.Context, id string) error {
 		}
 	}
 
-	err = redisConn.Send("DEL", indexCacheName(id))
+	_, err = redisConn.Do("DEL", indexCacheName(id))
 	if err != nil {
 		redisLogger.WithFields(logrus.Fields{
 			"cmd":   "DEL",
@@ -393,15 +497,15 @@ func (rb *redisBackend) DeindexTicket(ctx context.Context, id string) error {
 		return status.Errorf(codes.Internal, "%v", err)
 	}
 
-	_, err = redisConn.Do("EXEC")
-	if err != nil {
-		redisLogger.WithFields(logrus.Fields{
-			"cmd":   "EXEC",
-			"id":    id,
-			"error": err.Error(),
-		}).Error("failed to deindex the ticket")
-		return status.Errorf(codes.Internal, "%v", err)
-	}
+	// _, err = redisConn.Do("EXEC")
+	// if err != nil {
+	// 	redisLogger.WithFields(logrus.Fields{
+	// 		"cmd":   "EXEC",
+	// 		"id":    id,
+	// 		"error": err.Error(),
+	// 	}).Error("failed to deindex the ticket")
+	// 	return status.Errorf(codes.Internal, "%v", err)
+	// }
 
 	return nil
 }
@@ -418,7 +522,7 @@ func (rb *redisBackend) FilterTickets(ctx context.Context, pool *pb.Pool, pageSi
 	var ticketBytes [][]byte
 	var idsInFilter, idsInIgnoreLists []string
 
-	redisConn, err = rb.connect(ctx)
+	redisConn, err = rb.connectReadOnly(ctx)
 	if err != nil {
 		return err
 	}
@@ -461,40 +565,46 @@ func (rb *redisBackend) FilterTickets(ctx context.Context, pool *pb.Pool, pageSi
 
 	idSet = set.Difference(idSet, idsInIgnoreLists)
 
-	// TODO: finish reworking this after the proto changes.
-	for _, page := range idsToPages(idSet, pageSize) {
-		ticketBytes, err = redis.ByteSlices(redisConn.Do("MGET", page...))
-		if err != nil {
-			redisLogger.WithFields(logrus.Fields{
-				"Command": fmt.Sprintf("MGET %v", page),
-			}).WithError(err).Error("Failed to lookup tickets.")
-			return status.Errorf(codes.Internal, "%v", err)
-		}
+	redisLogger.Infof("idset is %d", len(idSet))
 
-		tickets := make([]*pb.Ticket, 0, len(page))
-		for i, b := range ticketBytes {
-			// Tickets may be deleted by the time we read it from redis.
-			if b != nil {
-				t := &pb.Ticket{}
-				err = proto.Unmarshal(b, t)
-				if err != nil {
-					redisLogger.WithFields(logrus.Fields{
-						"key": page[i],
-					}).WithError(err).Error("Failed to unmarshal ticket from redis.")
-					return status.Errorf(codes.Internal, "%v", err)
-				}
-				tickets = append(tickets, t)
+	idsBySlot := redisc.SplitBySlot(idSet...)
+
+	for _, idSlot := range idsBySlot {
+		// TODO: finish reworking this after the proto changes.
+		for _, page := range idsToPages(idSlot, pageSize) {
+			ticketBytes, err = redis.ByteSlices(redisConn.Do("MGET", page...))
+			if err != nil {
+				redisLogger.WithFields(logrus.Fields{
+					"Command": fmt.Sprintf("MGET %v", page),
+				}).WithError(err).Error("Failed to lookup tickets.")
+				return status.Errorf(codes.Internal, "%v", err)
 			}
-		}
 
-		err = callback(tickets)
-		if err != nil {
-			return status.Errorf(codes.Internal, "%v", err)
-		}
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+			tickets := make([]*pb.Ticket, 0, len(page))
+			for i, b := range ticketBytes {
+				// Tickets may be deleted by the time we read it from redis.
+				if b != nil {
+					t := &pb.Ticket{}
+					err = proto.Unmarshal(b, t)
+					if err != nil {
+						redisLogger.WithFields(logrus.Fields{
+							"key": page[i],
+						}).WithError(err).Error("Failed to unmarshal ticket from redis.")
+						return status.Errorf(codes.Internal, "%v", err)
+					}
+					tickets = append(tickets, t)
+				}
+			}
+
+			err = callback(tickets)
+			if err != nil {
+				return status.Errorf(codes.Internal, "%v", err)
+			}
+			select {
+			case <-ctx.Done():
+				return ctx.Err()
+			default:
+			}
 		}
 	}
 
@@ -516,10 +626,10 @@ func (rb *redisBackend) UpdateAssignments(ctx context.Context, ids []string, ass
 	}
 	defer handleConnectionClose(&redisConn)
 
-	err = redisConn.Send("MULTI")
-	if err != nil {
-		return err
-	}
+	// err = redisConn.Send("MULTI")
+	// if err != nil {
+	// 	return err
+	// }
 
 	// Sanity check to make sure all inputs ids are valid
 	tickets := []*pb.Ticket{}
@@ -560,11 +670,11 @@ func (rb *redisBackend) UpdateAssignments(ctx context.Context, ids []string, ass
 	}
 
 	// Run pipelined Redis commands.
-	_, err = redisConn.Do("EXEC")
-	if err != nil {
-		redisLogger.WithError(err).Error("failed to execute update assignments transaction")
-		return err
-	}
+	// _, err = redisConn.Do("EXEC")
+	// if err != nil {
+	// 	redisLogger.WithError(err).Error("failed to execute update assignments transaction")
+	// 	return err
+	// }
 
 	return nil
 }
@@ -608,16 +718,16 @@ func (rb *redisBackend) AddTicketsToIgnoreList(ctx context.Context, ids []string
 	}
 	defer handleConnectionClose(&redisConn)
 
-	err = redisConn.Send("MULTI")
-	if err != nil {
-		redisLogger.WithError(err).Error("failed to pipeline commands for AddTicketsToIgnoreList")
-		return status.Error(codes.Internal, err.Error())
-	}
+	// err = redisConn.Send("MULTI")
+	// if err != nil {
+	// 	redisLogger.WithError(err).Error("failed to pipeline commands for AddTicketsToIgnoreList")
+	// 	return status.Error(codes.Internal, err.Error())
+	// }
 
 	currentTime := time.Now().UnixNano()
 	for _, id := range ids {
 		// Index the DoubleArg by value.
-		err = redisConn.Send("ZADD", "proposed_ticket_ids", currentTime, id)
+		_, err = redisConn.Do("ZADD", "proposed_ticket_ids", currentTime, id)
 		if err != nil {
 			redisLogger.WithError(err).Error("failed to append proposed tickets to redis")
 			return status.Error(codes.Internal, err.Error())
@@ -625,11 +735,11 @@ func (rb *redisBackend) AddTicketsToIgnoreList(ctx context.Context, ids []string
 	}
 
 	// Run pipelined Redis commands.
-	_, err = redisConn.Do("EXEC")
-	if err != nil {
-		redisLogger.WithError(err).Error("failed to execute pipelined commands for AddTicketsToIgnoreList")
-		return status.Error(codes.Internal, err.Error())
-	}
+	// _, err = redisConn.Do("EXEC")
+	// if err != nil {
+	// 	redisLogger.WithError(err).Error("failed to execute pipelined commands for AddTicketsToIgnoreList")
+	// 	return status.Error(codes.Internal, err.Error())
+	// }
 
 	return nil
 }
@@ -646,14 +756,14 @@ func (rb *redisBackend) DeleteTicketsFromIgnoreList(ctx context.Context, ids []s
 	}
 	defer handleConnectionClose(&redisConn)
 
-	err = redisConn.Send("MULTI")
-	if err != nil {
-		redisLogger.WithError(err).Error("failed to pipeline commands for DeleteTicketsFromIgnoreList")
-		return status.Error(codes.Internal, err.Error())
-	}
+	// err = redisConn.Send("MULTI")
+	// if err != nil {
+	// 	redisLogger.WithError(err).Error("failed to pipeline commands for DeleteTicketsFromIgnoreList")
+	// 	return status.Error(codes.Internal, err.Error())
+	// }
 
 	for _, id := range ids {
-		err = redisConn.Send("ZREM", "proposed_ticket_ids", id)
+		_, err = redisConn.Do("ZREM", "proposed_ticket_ids", id)
 		if err != nil {
 			redisLogger.WithError(err).Error("failed to delete proposed tickets from ignore list")
 			return status.Error(codes.Internal, err.Error())
@@ -661,11 +771,11 @@ func (rb *redisBackend) DeleteTicketsFromIgnoreList(ctx context.Context, ids []s
 	}
 
 	// Run pipelined Redis commands.
-	_, err = redisConn.Do("EXEC")
-	if err != nil {
-		redisLogger.WithError(err).Error("failed to execute pipelined commands for DeleteTicketsFromIgnoreList")
-		return status.Error(codes.Internal, err.Error())
-	}
+	// _, err = redisConn.Do("EXEC")
+	// if err != nil {
+	// 	redisLogger.WithError(err).Error("failed to execute pipelined commands for DeleteTicketsFromIgnoreList")
+	// 	return status.Error(codes.Internal, err.Error())
+	// }
 
 	return nil
 }

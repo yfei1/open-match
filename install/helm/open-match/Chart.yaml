@@ -17,10 +17,10 @@ appVersion: "0.0.0-dev"
 version: 0.0.0-dev
 name: open-match
 dependencies:
-  - name: redis
-    version: 9.5.0
-    repository: https://kubernetes-charts.storage.googleapis.com/
-    condition: open-match-core.enabled
+  # - name: redis
+  #   version: 9.5.0
+  #   repository: https://kubernetes-charts.storage.googleapis.com/
+  #   condition: open-match-core.enabled
   - name: open-match-telemetry
     version: 0.0.0-dev
     condition: open-match-telemetry.enabled

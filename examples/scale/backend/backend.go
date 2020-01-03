@@ -73,13 +73,11 @@ func Run() {
 	}
 
 	defer feConn.Close()
-	fe := pb.NewFrontendClient(feConn)
+	//fe := pb.NewFrontendClient(feConn)
 
-	for i := 0; i < 10; i++ {
-		go doFetch(cfg, be)
-		go doAssign(be)
-		go doDelete(fe)
-	}
+	go doFetch(cfg, be)
+	// go doAssign(be)
+	// go doDelete(fe)
 
 	select {}
 

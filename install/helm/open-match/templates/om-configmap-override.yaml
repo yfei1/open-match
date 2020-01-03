@@ -33,5 +33,5 @@ data:
     synchronizer:
       enabled: true
       registrationIntervalMs: 100ms
-      proposalCollectionIntervalMs: 1200ms
+      proposalCollectionIntervalMs: 1000ms
 {{- end }}

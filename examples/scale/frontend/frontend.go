@@ -69,7 +69,7 @@ func Run() {
 func doCreate(cfg config.View, fe pb.FrontendClient) {
 	concurrent := cfg.GetInt("testConfig.concurrentCreates")
 	start := time.Now()
-	for {
+	for j := 0; j < 40000; j += concurrent {
 		var wg sync.WaitGroup
 		for i := 0; i < concurrent; i++ {
 			wg.Add(1)

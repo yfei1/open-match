@@ -81,7 +81,7 @@ data:
         size: 10000
 
     redis:
-      hostname: 10.77.164.107
+      hostname: 10.0.38.145
       port: {{ .Values.redis.redisPort }}
       user: {{ .Values.redis.user }}
 {{- if .Values.redis.usePassword }}
