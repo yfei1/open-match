@@ -37,7 +37,7 @@ var (
 		"app":       "openmatch",
 		"component": "statestore.redis",
 	})
-	mRedisConnLatencyMs  = telemetry.HistogramWithBounds("redis/connectlatency", "latency to get a redis connection", "ms", []float64{0, 50, 200, 500, 1000, 2000, 4000, 10000})
+	mRedisConnLatencyMs  = telemetry.HistogramWithBounds("redis/connectlatency", "latency to get a redis connection", "ms", telemetry.HistogramBounds)
 	mRedisConnPoolActive = telemetry.Gauge("redis/connectactivecount", "number of connections in the pool, includes idle plus connections in use")
 	mRedisConnPoolIdle   = telemetry.Gauge("redis/connectidlecount", "number of idle connections in the pool")
 )
@@ -94,9 +94,9 @@ func newRedis(cfg config.View) Service {
 		},
 	}
 	healthCheckPool := &redis.Pool{
-		MaxIdle:     1,
-		MaxActive:   2,
-		IdleTimeout: cfg.GetDuration("redis.pool.healthCheckTimeout"),
+		MaxIdle:     3,
+		MaxActive:   0,
+		IdleTimeout: 10 * cfg.GetDuration("redis.pool.healthCheckTimeout"),
 		Wait:        true,
 		DialContext: func(ctx context.Context) (redis.Conn, error) {
 			if ctx.Err() != nil {
@@ -130,6 +130,7 @@ func (rb *redisBackend) HealthCheck(ctx context.Context) error {
 	if err != nil {
 		return status.Errorf(codes.Unavailable, "%v", err)
 	}
+
 	return nil
 }
 
@@ -435,7 +436,7 @@ func (rb *redisBackend) FilterTickets(ctx context.Context, pool *pb.Pool, pageSi
 	}
 	defer handleConnectionClose(&redisConn)
 
-	ttl := rb.cfg.GetDuration("redis.ignoreLists.ttl")
+	ttl := rb.cfg.GetDuration("storage.ignoreListTTL")
 	curTime := time.Now()
 	curTimeInt := curTime.UnixNano()
 	startTimeInt := curTime.Add(-ttl).UnixNano()
