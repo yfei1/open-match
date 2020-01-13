@@ -109,8 +109,15 @@ redis:
   usePassword: false
   usePasswordFile: false
   secretMountPath: /opt/bitnami/redis/secrets
-  configmap:
+  # http://download.redis.io/redis-stable/redis.conf
+  configmap: |
     maxclients 100000
+    replica-serve-stale-data yes
+    replica-read-only yes
+  sentinel:
+    enabled: true
+    masterSet: om-redis-master
+    port: 26379
   master:
     disableCommands: [] # don't disable 'FLUSH-' commands
     resources:

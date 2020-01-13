@@ -364,7 +364,11 @@ func TestConnect(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(ctx)
 	cancel()
-	conn, err := rb.connect(ctx)
+	conn, err := rb.connectToMaster(ctx)
+	assert.NotNil(err)
+	assert.Nil(conn)
+
+	conn, err = rb.connectToSlave(ctx)
 	assert.NotNil(err)
 	assert.Nil(conn)
 }
