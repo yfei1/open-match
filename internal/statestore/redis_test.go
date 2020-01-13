@@ -380,7 +380,7 @@ func createRedis(t *testing.T) (config.View, func()) {
 		t.Fatalf("cannot create redis %s", err)
 	}
 
-	cfg.Set("redis.hostname", mredis.Host())
+	cfg.Set("redis.servicehostname", mredis.Host())
 	cfg.Set("redis.port", mredis.Port())
 	cfg.Set("redis.pool.maxIdle", 1000)
 	cfg.Set("redis.pool.idleTimeout", time.Second)

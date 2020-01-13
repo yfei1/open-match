@@ -58,13 +58,14 @@ func (rb *redisBackend) Close() error {
 
 // newRedis creates a statestore.Service backed by Redis database.
 func newRedis(cfg config.View) Service {
-	sentinelAddr := cfg.GetString("redis.hostname") + ":" + cfg.GetString("redis.sentinelPort")
+	sentinelAddr := cfg.GetString("redis.serviceHostname") + ":" + cfg.GetString("redis.sentinelPort")
 	redisSentinelURL := redisURLFromAddr(sentinelAddr, cfg)
 
+	idleTimeout := cfg.GetDuration("redis.pool.idleTimeout")
 	sentinelPool := &redis.Pool{
 		MaxIdle:      cfg.GetInt("redis.pool.maxIdle"),
 		MaxActive:    cfg.GetInt("redis.pool.maxActive"),
-		IdleTimeout:  cfg.GetDuration("redis.pool.idleTimeout"),
+		IdleTimeout:  idleTimeout,
 		Wait:         true,
 		TestOnBorrow: testOnBorrow,
 		DialContext: func(ctx context.Context) (redis.Conn, error) {
@@ -73,22 +74,22 @@ func newRedis(cfg config.View) Service {
 			}
 
 			redisLogger.WithField("sentinelAddr", sentinelAddr).Debug("Attempting to connect to Redis Sentinel")
-
-			return redis.DialURL(redisSentinelURL, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.idleTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.idleTimeout")))
+			return redis.DialURL(redisSentinelURL, redis.DialConnectTimeout(idleTimeout), redis.DialReadTimeout(idleTimeout))
 		},
 	}
 
+	healthCheckTimeout := cfg.GetDuration("redis.pool.healthCheckTimeout")
 	healthCheckPool := &redis.Pool{
 		MaxIdle:      3,
 		MaxActive:    0,
-		IdleTimeout:  10 * cfg.GetDuration("redis.pool.healthCheckTimeout"),
+		IdleTimeout:  10 * healthCheckTimeout,
 		Wait:         true,
 		TestOnBorrow: testOnBorrow,
 		DialContext: func(ctx context.Context) (redis.Conn, error) {
 			if ctx.Err() != nil {
 				return nil, ctx.Err()
 			}
-			return redis.DialURL(redisSentinelURL, redis.DialConnectTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")), redis.DialReadTimeout(cfg.GetDuration("redis.pool.healthCheckTimeout")))
+			return redis.DialURL(redisSentinelURL, redis.DialConnectTimeout(healthCheckTimeout), redis.DialReadTimeout(healthCheckTimeout))
 		},
 	}
 
@@ -98,26 +99,6 @@ func newRedis(cfg config.View) Service {
 		readPool:        getConnPoolFromSentinel("slaves", cfg, sentinelPool),
 		cfg:             cfg,
 	}
-}
-
-func redisURLFromAddr(addr string, cfg config.View) string {
-	// As per https://www.iana.org/assignments/uri-schemes/prov/redis
-	// redis://user:secret@localhost:6379/0?foo=bar&qux=baz
-
-	// Add redis user and password to connection url if they exist
-	redisURL := "redis://"
-
-	passwordFile := cfg.GetString("redis.passwordPath")
-	if len(passwordFile) > 0 {
-		redisLogger.Debugf("loading Redis password from file %s", passwordFile)
-		passwordData, err := ioutil.ReadFile(passwordFile)
-		if err != nil {
-			redisLogger.Fatalf("cannot read Redis password from file %s, desc: %s", passwordFile, err.Error())
-		}
-		redisURL += fmt.Sprintf("%s:%s@", cfg.GetString("redis.user"), string(passwordData))
-	}
-
-	return redisURL + addr
 }
 
 func testOnBorrow(c redis.Conn, t time.Time) error {
@@ -131,6 +112,11 @@ func testOnBorrow(c redis.Conn, t time.Time) error {
 
 func getConnPoolFromSentinel(connType string, cfg config.View, sentinelPool *redis.Pool) *redis.Pool {
 	var dialContextFunc func(ctx context.Context) (redis.Conn, error)
+
+	idleTimeout := cfg.GetDuration("redis.pool.idleTimeout")
+	maxIdle := cfg.GetInt("redis.pool.maxIdle")
+	maxActive := cfg.GetInt("redis.pool.maxActive")
+
 	switch connType {
 	case "slaves":
 		dialContextFunc = func(ctx context.Context) (redis.Conn, error) {
@@ -184,8 +170,6 @@ func getConnPoolFromSentinel(connType string, cfg config.View, sentinelPool *red
 			rand.Seed(time.Now().Unix())
 
 			slaveURL := redisURLFromAddr(onlineSlaves[rand.Intn(len(onlineSlaves))], cfg)
-			idleTimeout := cfg.GetDuration("redis.pool.idleTimeout")
-
 			return redis.DialURL(slaveURL, redis.DialConnectTimeout(idleTimeout), redis.DialReadTimeout(idleTimeout))
 		}
 	case "master":
@@ -211,20 +195,38 @@ func getConnPoolFromSentinel(connType string, cfg config.View, sentinelPool *red
 			}
 
 			masterURL := redisURLFromAddr(fmt.Sprintf("%s:%s", masterInfo[0], masterInfo[1]), cfg)
-			idleTimeout := cfg.GetDuration("redis.pool.idleTimeout")
-
 			return redis.DialURL(masterURL, redis.DialConnectTimeout(idleTimeout), redis.DialReadTimeout(idleTimeout))
 		}
 	}
 
 	return &redis.Pool{
-		MaxIdle:      cfg.GetInt("redis.pool.maxIdle"),
-		MaxActive:    cfg.GetInt("redis.pool.maxActive"),
-		IdleTimeout:  cfg.GetDuration("redis.pool.idleTimeout"),
+		MaxIdle:      maxIdle,
+		MaxActive:    maxActive,
+		IdleTimeout:  idleTimeout,
 		Wait:         true,
 		TestOnBorrow: testOnBorrow,
 		DialContext:  dialContextFunc,
 	}
+}
+
+func redisURLFromAddr(addr string, cfg config.View) string {
+	// As per https://www.iana.org/assignments/uri-schemes/prov/redis
+	// redis://user:secret@localhost:6379/0?foo=bar&qux=baz
+
+	// Add redis user and password to connection url if they exist
+	redisURL := "redis://"
+
+	passwordFile := cfg.GetString("redis.passwordPath")
+	if len(passwordFile) > 0 {
+		redisLogger.Debugf("loading Redis password from file %s", passwordFile)
+		passwordData, err := ioutil.ReadFile(passwordFile)
+		if err != nil {
+			redisLogger.Fatalf("cannot read Redis password from file %s, desc: %s", passwordFile, err.Error())
+		}
+		redisURL += fmt.Sprintf("%s:%s@", cfg.GetString("redis.user"), string(passwordData))
+	}
+
+	return redisURL + addr
 }
 
 // HealthCheck indicates if the database is reachable.

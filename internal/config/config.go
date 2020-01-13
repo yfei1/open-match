@@ -17,9 +17,10 @@ package config
 
 import (
 	"fmt"
+	"log"
+
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
-	"log"
 )
 
 // Read sets default to a viper instance and read user config to override these defaults.
@@ -30,7 +31,6 @@ func Read() (View, error) {
 	dcfg := viper.New()
 	dcfg.SetConfigType("yaml")
 	dcfg.AddConfigPath(".")
-	// The config path needs to be the same as the volumeMount path defined via helm
 	dcfg.AddConfigPath("/app/config/default")
 	dcfg.SetConfigName("matchmaker_config_default")
 	err = dcfg.ReadInConfig()
@@ -49,7 +49,6 @@ func Read() (View, error) {
 
 	cfg.SetConfigType("yaml")
 	cfg.AddConfigPath(".")
-	// The config path needs to be the same as the volumeMountPath defined via helm
 	cfg.AddConfigPath("/app/config/override")
 	cfg.SetConfigName("matchmaker_config_override")
 	err = cfg.ReadInConfig()

@@ -28,7 +28,7 @@ func New(t *testing.T, cfg config.Mutable) func() {
 	if err != nil {
 		t.Fatalf("failed to create miniredis, %v", err)
 	}
-	cfg.Set("redis.hostname", mredis.Host())
+	cfg.Set("redis.servicehostname", mredis.Host())
 	cfg.Set("redis.port", mredis.Port())
 	cfg.Set("redis.pool.maxIdle", PoolMaxIdle)
 	cfg.Set("redis.pool.maxActive", PoolMaxActive)
