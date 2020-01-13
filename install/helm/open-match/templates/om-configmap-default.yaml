@@ -82,9 +82,11 @@ data:
         size: 10000
 
     redis:
-      hostname: {{ .Values.redis.fullnameOverride }}-master.{{ .Release.Namespace }}.svc.cluster.local
-      port: {{ .Values.redis.redisPort }}
+      # Randomly connects to a redis sentinel backend
+      hostname: {{ .Values.redis.fullnameOverride }}.{{ .Release.Namespace }}.svc.cluster.local
+      sentinelPort: {{ .Values.redis.sentinel.port }}
       user: {{ .Values.redis.user }}
+      sentinelMaster: {{ .Values.redis.sentinel.masterSet }}
 {{- if .Values.redis.usePassword }}
       passwordPath: {{ .Values.redis.secretMountPath }}/redis-password
 {{- end }}
