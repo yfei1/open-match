@@ -104,10 +104,9 @@ SWAGGERUI_PORT = 51500
 PROMETHEUS_PORT = 9090
 JAEGER_QUERY_PORT = 16686
 GRAFANA_PORT = 3000
-LOCUST_PORT = 8089
 FRONTEND_PORT = 51504
 BACKEND_PORT = 51505
-MMLOGIC_PORT = 51503
+QUERY_PORT = 51503
 SYNCHRONIZER_PORT = 51506
 DEMO_PORT = 51507
 PROTOC := $(TOOLCHAIN_BIN)/protoc$(EXE_EXTENSION)
@@ -119,7 +118,6 @@ KIND = $(TOOLCHAIN_BIN)/kind$(EXE_EXTENSION)
 TERRAFORM = $(TOOLCHAIN_BIN)/terraform$(EXE_EXTENSION)
 CERTGEN = $(TOOLCHAIN_BIN)/certgen$(EXE_EXTENSION)
 GOLANGCI = $(TOOLCHAIN_BIN)/golangci-lint$(EXE_EXTENSION)
-DOTNET = $(TOOLCHAIN_DIR)/dotnet/dotnet$(EXE_EXTENSION)
 CHART_TESTING = $(TOOLCHAIN_BIN)/ct$(EXE_EXTENSION)
 GCLOUD = gcloud --quiet
 OPEN_MATCH_HELM_NAME = open-match
@@ -161,7 +159,6 @@ ifeq ($(OS),Windows_NT)
 	GOLANGCI_PACKAGE = https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_VERSION)/golangci-lint-$(GOLANGCI_VERSION)-windows-amd64.zip
 	KIND_PACKAGE = https://github.com/kubernetes-sigs/kind/releases/download/v$(KIND_VERSION)/kind-windows-amd64
 	TERRAFORM_PACKAGE = https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_windows_amd64.zip
-	DOTNET_PACKAGE = https://download.visualstudio.microsoft.com/download/pr/8ac3e8b7-9918-4e0c-b1be-5aa3e6afd00f/0be99c6ab9362b3c47050cdd50cba846/dotnet-sdk-2.2.402-win-x64.zip
 	CHART_TESTING_PACKAGE = https://github.com/helm/chart-testing/releases/download/v$(CHART_TESTING_VERSION)/chart-testing_$(CHART_TESTING_VERSION)_windows_amd64.zip
 	SED_REPLACE = sed -i
 else
@@ -174,7 +171,6 @@ else
 		GOLANGCI_PACKAGE = https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_VERSION)/golangci-lint-$(GOLANGCI_VERSION)-linux-amd64.tar.gz
 		KIND_PACKAGE = https://github.com/kubernetes-sigs/kind/releases/download/v$(KIND_VERSION)/kind-linux-amd64
 		TERRAFORM_PACKAGE = https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_linux_amd64.zip
-		DOTNET_PACKAGE = https://download.visualstudio.microsoft.com/download/pr/46411df1-f625-45c8-b5e7-08ab736d3daa/0fbc446088b471b0a483f42eb3cbf7a2/dotnet-sdk-2.2.402-linux-x64.tar.gz
 		CHART_TESTING_PACKAGE = https://github.com/helm/chart-testing/releases/download/v$(CHART_TESTING_VERSION)/chart-testing_$(CHART_TESTING_VERSION)_linux_amd64.tar.gz
 		SED_REPLACE = sed -i
 	endif
@@ -186,25 +182,22 @@ else
 		GOLANGCI_PACKAGE = https://github.com/golangci/golangci-lint/releases/download/v$(GOLANGCI_VERSION)/golangci-lint-$(GOLANGCI_VERSION)-darwin-amd64.tar.gz
 		KIND_PACKAGE = https://github.com/kubernetes-sigs/kind/releases/download/v$(KIND_VERSION)/kind-darwin-amd64
 		TERRAFORM_PACKAGE = https://releases.hashicorp.com/terraform/$(TERRAFORM_VERSION)/terraform_$(TERRAFORM_VERSION)_darwin_amd64.zip
-		DOTNET_PACKAGE = https://download.visualstudio.microsoft.com/download/pr/2079de3a-714b-4fa5-840f-70e898b393ef/d631b5018560873ac350d692290881db/dotnet-sdk-2.2.402-osx-x64.tar.gz
 		CHART_TESTING_PACKAGE = https://github.com/helm/chart-testing/releases/download/v$(CHART_TESTING_VERSION)/chart-testing_$(CHART_TESTING_VERSION)_darwin_amd64.tar.gz
 		SED_REPLACE = sed -i ''
 	endif
 endif
 
-GOLANG_PROTOS = pkg/pb/backend.pb.go pkg/pb/frontend.pb.go pkg/pb/matchfunction.pb.go pkg/pb/mmlogic.pb.go pkg/pb/messages.pb.go pkg/pb/extensions.pb.go pkg/pb/evaluator.pb.go internal/ipb/synchronizer.pb.go pkg/pb/backend.pb.gw.go pkg/pb/frontend.pb.gw.go pkg/pb/matchfunction.pb.gw.go pkg/pb/mmlogic.pb.gw.go pkg/pb/evaluator.pb.gw.go
+GOLANG_PROTOS = pkg/pb/backend.pb.go pkg/pb/frontend.pb.go pkg/pb/matchfunction.pb.go pkg/pb/query.pb.go pkg/pb/messages.pb.go pkg/pb/extensions.pb.go pkg/pb/evaluator.pb.go internal/ipb/synchronizer.pb.go pkg/pb/backend.pb.gw.go pkg/pb/frontend.pb.gw.go pkg/pb/matchfunction.pb.gw.go pkg/pb/query.pb.gw.go pkg/pb/evaluator.pb.gw.go
 
-CSHARP_PROTOS = csharp/OpenMatch/Backend.cs csharp/OpenMatch/Frontend.cs csharp/OpenMatch/Evaluator.cs csharp/OpenMatch/Matchfunction.cs csharp/OpenMatch/Messages.cs csharp/OpenMatch/Mmlogic.cs
+SWAGGER_JSON_DOCS = api/frontend.swagger.json api/backend.swagger.json api/query.swagger.json api/matchfunction.swagger.json api/evaluator.swagger.json
 
-SWAGGER_JSON_DOCS = api/frontend.swagger.json api/backend.swagger.json api/mmlogic.swagger.json api/matchfunction.swagger.json api/evaluator.swagger.json
-
-ALL_PROTOS = $(GOLANG_PROTOS) $(SWAGGER_JSON_DOCS) $(CSHARP_PROTOS)
+ALL_PROTOS = $(GOLANG_PROTOS) $(SWAGGER_JSON_DOCS)
 
 # CMDS is a list of all folders in cmd/
 CMDS = $(notdir $(wildcard cmd/*))
 
 # Names of the individual images, ommiting the openmatch prefix.
-IMAGES = $(CMDS) mmf-go-soloduel mmf-go-pool evaluator-go-simple stress-frontend base-build
+IMAGES = $(CMDS) mmf-go-soloduel mmf-go-pool evaluator-go-simple base-build
 
 help:
 	@cat Makefile | grep ^\#\# | grep -v ^\#\#\# |cut -c 4-
@@ -213,6 +206,89 @@ local-cloud-build: LOCAL_CLOUD_BUILD_PUSH = # --push
 local-cloud-build: gcloud
 	cloud-build-local --config=cloudbuild.yaml --dryrun=false $(LOCAL_CLOUD_BUILD_PUSH) --substitutions SHORT_SHA=$(SHORT_SHA),_GCB_POST_SUBMIT=$(_GCB_POST_SUBMIT),_GCB_LATEST_VERSION=$(_GCB_LATEST_VERSION),BRANCH_NAME=$(BRANCH_NAME) .
 
+<<<<<<< HEAD
+=======
+################################################################################
+## #############################################################################
+## Image commands:
+## These commands are auto-generated based on a complete list of images.  All
+## folders in cmd/ are turned into an image using Dockerfile.cmd.  Additional
+## images are specified by the IMAGES variable.  Image commands ommit the
+## "openmatch-" prefix on the image name and tags.
+##
+
+#######################################
+## build-images / build-<image name>-image: builds images locally
+##
+build-images: $(foreach IMAGE,$(IMAGES),build-$(IMAGE)-image)
+
+# Include all-protos here so that all dependencies are guaranteed to be downloaded after the base image is created.
+# This is important so that the repository does not have any mutations while building individual images.
+build-base-build-image: docker $(ALL_PROTOS)
+	docker build -f Dockerfile.base-build -t open-match-base-build -t $(REGISTRY)/openmatch-base-build:$(TAG) -t $(REGISTRY)/openmatch-base-build:$(ALTERNATE_TAG) .
+
+$(foreach CMD,$(CMDS),build-$(CMD)-image): build-%-image: docker build-base-build-image
+	docker build \
+		-f Dockerfile.cmd \
+		$(IMAGE_BUILD_ARGS) \
+		--build-arg=IMAGE_TITLE=$* \
+		-t $(REGISTRY)/openmatch-$*:$(TAG) \
+		-t $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG) \
+		.
+
+build-mmf-go-soloduel-image: docker build-base-build-image
+	docker build -f examples/functions/golang/soloduel/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-soloduel:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-soloduel:$(ALTERNATE_TAG) .
+
+build-mmf-go-pool-image: docker build-base-build-image
+	docker build -f test/matchfunction/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-pool:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-pool:$(ALTERNATE_TAG) .
+
+build-evaluator-go-simple-image: docker build-base-build-image
+	docker build -f test/evaluator/Dockerfile -t $(REGISTRY)/openmatch-evaluator-go-simple:$(TAG) -t $(REGISTRY)/openmatch-evaluator-go-simple:$(ALTERNATE_TAG) .
+
+#######################################
+## push-images / push-<image name>-image: builds and pushes images to your
+## container registry.
+##
+push-images: $(foreach IMAGE,$(IMAGES),push-$(IMAGE)-image)
+
+$(foreach IMAGE,$(IMAGES),push-$(IMAGE)-image): push-%-image: build-%-image docker
+	docker push $(REGISTRY)/openmatch-$*:$(TAG)
+	docker push $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG)
+ifeq ($(_GCB_POST_SUBMIT),1)
+	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(VERSIONED_CANARY_TAG)
+	docker push $(REGISTRY)/openmatch-$*:$(VERSIONED_CANARY_TAG)
+ifeq ($(BASE_VERSION),0.0.0-dev)
+	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(DATED_CANARY_TAG)
+	docker push $(REGISTRY)/openmatch-$*:$(DATED_CANARY_TAG)
+	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(CANARY_TAG)
+	docker push $(REGISTRY)/openmatch-$*:$(CANARY_TAG)
+endif
+endif
+
+#######################################
+## retag-images / retag-<image name>-image: publishes images on the public
+## container registry.  Used for publishing releases.
+##
+retag-images: $(foreach IMAGE,$(IMAGES),retag-$(IMAGE)-image)
+
+retag-%-image: SOURCE_REGISTRY = gcr.io/$(OPEN_MATCH_BUILD_PROJECT_ID)
+retag-%-image: TARGET_REGISTRY = gcr.io/$(OPEN_MATCH_PUBLIC_IMAGES_PROJECT_ID)
+retag-%-image: SOURCE_TAG = canary
+$(foreach IMAGE,$(IMAGES),retag-$(IMAGE)-image): retag-%-image: docker
+	docker pull $(SOURCE_REGISTRY)/openmatch-$*:$(SOURCE_TAG)
+	docker tag $(SOURCE_REGISTRY)/openmatch-$*:$(SOURCE_TAG) $(TARGET_REGISTRY)/openmatch-$*:$(TAG)
+	docker push $(TARGET_REGISTRY)/openmatch-$*:$(TAG)
+
+#######################################
+## clean-images / clean-<image name>-image: removes images from local docker
+##
+clean-images: docker $(foreach IMAGE,$(IMAGES),clean-$(IMAGE)-image)
+	-docker rmi -f open-match-base-build
+
+$(foreach IMAGE,$(IMAGES),clean-$(IMAGE)-image): clean-%-image:
+	-docker rmi -f $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG)
+
+>>>>>>> be0cebd457bef63f3ac12fbc84b9d00e4d7de8b7
 #####################################################################################################################
 update-chart-deps: build/toolchain/bin/helm$(EXE_EXTENSION)
 	(cd $(REPOSITORY_ROOT)/install/helm/open-match; $(HELM) repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com; $(HELM) dependency update)
@@ -274,29 +350,32 @@ install-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$
 
 # install-scale-chart will wait for installing open-match-core with telemetry supports then install open-match-scale chart.
 install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
+	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match -f install/helm/open-match/values-production.yaml \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.function.enabled=true \
 		--set open-match-customize.evaluator.enabled=true \
 		--set open-match-customize.function.image=open-match.dev/open-match/examples/functions/golang/rosterbased \
 		--set global.telemetry.grafana.enabled=true \
-		--set global.telemetry.jaeger.enabled=true \
+		--set global.telemetry.jaeger.enabled=false \
 		--set global.telemetry.prometheus.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -f -
-	$(HELM) template $(OPEN_MATCH_RELEASE_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) \
+	$(HELM) template $(OPEN_MATCH_RELEASE_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) -f install/helm/open-match/values-production.yaml \
 		--set open-match-core.enabled=false \
+		--set open-match-core.redis.enabled=false \
+		--set global.telemetry.prometheus.enabled=true \
+		--set global.telemetry.grafana.enabled=true \
 		--set open-match-scale.enabled=true \
 		--set global.logging.rpc.enabled=false | $(KO) apply -t $(TAG) -n open-match -P -f -
 
 # install-ci-chart will install open-match-core with pool based mmf for end-to-end in-cluster test.
 install-ci-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
 	$(HELM) upgrade $(OPEN_MATCH_HELM_NAME) $(HELM_UPGRADE_FLAGS) --atomic install/helm/open-match $(HELM_IMAGE_FLAGS) \
-		--set open-match-core.ignoreListTTL=1000ms \
+		--set open-match-core.ignoreListTTL=500ms \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.function.enabled=true \
 		--set open-match-customize.evaluator.enabled=true \
 		--set open-match-customize.function.image=openmatch-mmf-go-pool \
-		--set mmlogic.replicas=1,frontend.replicas=1,backend.replicas=1,open-match-customize.evaluator.replicas=1,open-match-customize.function.replicas=1 \
+		--set query.replicas=1,frontend.replicas=1,backend.replicas=1,open-match-customize.evaluator.replicas=1,open-match-customize.function.replicas=1 \
 		--set redis.master.resources.requests.cpu=0.6,redis.master.resources.requests.memory=300Mi \
 		--set ci=true
 
@@ -439,22 +518,6 @@ build/toolchain/bin/terraform$(EXE_EXTENSION):
 	mv $(TOOLCHAIN_DIR)/temp-terraform/terraform$(EXE_EXTENSION) $(TOOLCHAIN_BIN)/terraform$(EXE_EXTENSION)
 	rm -rf $(TOOLCHAIN_DIR)/temp-terraform/
 
-build/toolchain/dotnet/:
-	mkdir -p $(TOOLCHAIN_DIR)/dotnet
-ifeq ($(suffix $(DOTNET_PACKAGE)),.zip)
-	cd $(TOOLCHAIN_DIR)/dotnet && curl -Lo dotnet.zip $(DOTNET_PACKAGE) && unzip -j -q -o dotnet.zip
-	rm -rf $(TOOLCHAIN_DIR)/dotnet.zip
-else
-	cd $(TOOLCHAIN_DIR)/dotnet && curl -Lo dotnet.tar.gz $(DOTNET_PACKAGE) && tar xzf dotnet.tar.gz --strip-components 1
-	rm -rf $(TOOLCHAIN_DIR)/dotnet.tar.gz
-endif
-
-build/toolchain/python/:
-	virtualenv --python=python3 $(TOOLCHAIN_DIR)/python/
-	# Hack to workaround some crazy bug in pip that's chopping off python executable's name.
-	cd $(TOOLCHAIN_DIR)/python/bin && ln -s python3 pytho
-	cd $(TOOLCHAIN_DIR)/python/ && . bin/activate && pip install locustio google-cloud-storage && deactivate
-
 build/toolchain/bin/protoc$(EXE_EXTENSION):
 	mkdir -p $(TOOLCHAIN_BIN)
 	curl -o $(TOOLCHAIN_DIR)/protoc-temp.zip -L $(PROTOC_PACKAGE)
@@ -572,24 +635,6 @@ pkg/pb/%.pb.go: api/%.proto third_party/ build/toolchain/bin/protoc$(EXE_EXTENSI
 		--go_out=plugins=grpc:$(REPOSITORY_ROOT)/build/prototmp
 	mv $(REPOSITORY_ROOT)/build/prototmp/open-match.dev/open-match/$@ $@
 
-csharp/OpenMatch/Annotations.cs: third_party/
-	$(PROTOC) third_party/protoc-gen-swagger/options/annotations.proto \
-		-I $(REPOSITORY_ROOT) -I $(PROTOC_INCLUDES) \
-		--plugin=protoc-gen-grpc=grpc_csharp_plugin \
-		--csharp_out=$(REPOSITORY_ROOT)/csharp/OpenMatch
-
-csharp/OpenMatch/Openapiv2.cs: third_party/
-	$(PROTOC) third_party/protoc-gen-swagger/options/openapiv2.proto \
-		-I $(REPOSITORY_ROOT) -I $(PROTOC_INCLUDES) \
-		--plugin=protoc-gen-grpc=grpc_csharp_plugin \
-		--csharp_out=$(REPOSITORY_ROOT)/csharp/OpenMatch/
-
-csharp/OpenMatch/%.cs: third_party/ build/toolchain/bin/protoc$(EXE_EXTENSION) csharp/OpenMatch/Openapiv2.cs csharp/OpenMatch/Annotations.cs
-	$(PROTOC) api/$(shell echo $(*F)| tr A-Z a-z).proto \
-		-I $(REPOSITORY_ROOT) -I $(PROTOC_INCLUDES) \
-		--plugin=protoc-gen-grpc=grpc_csharp_plugin \
-		--csharp_out=$(REPOSITORY_ROOT)/csharp/OpenMatch
-
 internal/ipb/%.pb.go: internal/api/%.proto third_party/ build/toolchain/bin/protoc$(EXE_EXTENSION) build/toolchain/bin/protoc-gen-go$(EXE_EXTENSION) build/toolchain/bin/protoc-gen-grpc-gateway$(EXE_EXTENSION)
 	mkdir -p $(REPOSITORY_ROOT)/build/prototmp $(REPOSITORY_ROOT)/internal/ipb
 	$(PROTOC) $< \
@@ -628,7 +673,7 @@ description: \
 pkg/pb/backend.pb.go: pkg/pb/messages.pb.go
 pkg/pb/frontend.pb.go: pkg/pb/messages.pb.go
 pkg/pb/matchfunction.pb.go: pkg/pb/messages.pb.go
-pkg/pb/mmlogic.pb.go: pkg/pb/messages.pb.go
+pkg/pb/query.pb.go: pkg/pb/messages.pb.go
 pkg/pb/evaluator.pb.go: pkg/pb/messages.pb.go
 internal/ipb/synchronizer.pb.go: pkg/pb/messages.pb.go
 
@@ -642,10 +687,6 @@ test: $(ALL_PROTOS) tls-certs third_party/
 
 test-e2e-cluster: all-protos tls-certs third_party/
 	$(HELM) test --timeout 7m30s -v 0 --logs -n $(OPEN_MATCH_KUBERNETES_NAMESPACE) $(OPEN_MATCH_HELM_NAME)
-
-stress-frontend-%: build/toolchain/python/
-	$(TOOLCHAIN_DIR)/python/bin/locust -f $(REPOSITORY_ROOT)/test/stress/frontend.py --host=http://localhost:$(FRONTEND_PORT) \
-		--no-web -c $* -r 100 -t10m --csv=test/stress/stress_user$*
 
 fmt:
 	$(GO) fmt ./...
@@ -675,16 +716,19 @@ all: service-binaries example-binaries tools-binaries
 
 service-binaries: cmd/minimatch/minimatch$(EXE_EXTENSION) cmd/swaggerui/swaggerui$(EXE_EXTENSION)
 service-binaries: cmd/backend/backend$(EXE_EXTENSION) cmd/frontend/frontend$(EXE_EXTENSION)
-service-binaries: cmd/mmlogic/mmlogic$(EXE_EXTENSION) cmd/synchronizer/synchronizer$(EXE_EXTENSION)
+service-binaries: cmd/query/query$(EXE_EXTENSION) cmd/synchronizer/synchronizer$(EXE_EXTENSION)
 
 example-binaries: example-mmf-binaries example-evaluator-binaries
 example-mmf-binaries: examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION)
-example-evaluator-binaries: test/evaluator/simple$(EXE_EXTENSION)
+example-evaluator-binaries: test/evaluator/evaluator$(EXE_EXTENSION)
 
-examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION): pkg/pb/mmlogic.pb.go pkg/pb/mmlogic.pb.gw.go api/mmlogic.swagger.json pkg/pb/matchfunction.pb.go pkg/pb/matchfunction.pb.gw.go api/matchfunction.swagger.json
+examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION): pkg/pb/query.pb.go pkg/pb/query.pb.gw.go api/query.swagger.json pkg/pb/matchfunction.pb.go pkg/pb/matchfunction.pb.gw.go api/matchfunction.swagger.json
 	cd $(REPOSITORY_ROOT)/examples/functions/golang/soloduel; $(GO_BUILD_COMMAND)
 
-test/evaluator/simple$(EXE_EXTENSION): pkg/pb/evaluator.pb.go pkg/pb/evaluator.pb.gw.go api/evaluator.swagger.json
+test/matchfunction/matchfunction$(EXE_EXTENSION): pkg/pb/query.pb.go pkg/pb/query.pb.gw.go api/query.swagger.json pkg/pb/matchfunction.pb.go pkg/pb/matchfunction.pb.gw.go api/matchfunction.swagger.json
+	cd $(REPOSITORY_ROOT)/test/matchfunction; $(GO_BUILD_COMMAND)
+
+test/evaluator/evaluator$(EXE_EXTENSION): pkg/pb/evaluator.pb.go pkg/pb/evaluator.pb.gw.go api/evaluator.swagger.json
 	cd $(REPOSITORY_ROOT)/test/evaluator; $(GO_BUILD_COMMAND)
 
 tools-binaries: tools/certgen/certgen$(EXE_EXTENSION) tools/reaper/reaper$(EXE_EXTENSION)
@@ -695,8 +739,8 @@ cmd/backend/backend$(EXE_EXTENSION): pkg/pb/backend.pb.go pkg/pb/backend.pb.gw.g
 cmd/frontend/frontend$(EXE_EXTENSION): pkg/pb/frontend.pb.go pkg/pb/frontend.pb.gw.go api/frontend.swagger.json
 	cd $(REPOSITORY_ROOT)/cmd/frontend; $(GO_BUILD_COMMAND)
 
-cmd/mmlogic/mmlogic$(EXE_EXTENSION): pkg/pb/mmlogic.pb.go pkg/pb/mmlogic.pb.gw.go api/mmlogic.swagger.json
-	cd $(REPOSITORY_ROOT)/cmd/mmlogic; $(GO_BUILD_COMMAND)
+cmd/query/query$(EXE_EXTENSION): pkg/pb/query.pb.go pkg/pb/query.pb.gw.go api/query.swagger.json
+	cd $(REPOSITORY_ROOT)/cmd/query; $(GO_BUILD_COMMAND)
 
 cmd/synchronizer/synchronizer$(EXE_EXTENSION): internal/ipb/synchronizer.pb.go
 	cd $(REPOSITORY_ROOT)/cmd/synchronizer; $(GO_BUILD_COMMAND)
@@ -704,7 +748,7 @@ cmd/synchronizer/synchronizer$(EXE_EXTENSION): internal/ipb/synchronizer.pb.go
 # Note: This list of dependencies is long but only add file references here. If you add a .PHONY dependency make will always rebuild it.
 cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/backend.pb.go pkg/pb/backend.pb.gw.go api/backend.swagger.json
 cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/frontend.pb.go pkg/pb/frontend.pb.gw.go api/frontend.swagger.json
-cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/mmlogic.pb.go pkg/pb/mmlogic.pb.gw.go api/mmlogic.swagger.json
+cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/query.pb.go pkg/pb/query.pb.gw.go api/query.swagger.json
 cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/evaluator.pb.go pkg/pb/evaluator.pb.gw.go api/evaluator.swagger.json
 cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/matchfunction.pb.go pkg/pb/matchfunction.pb.gw.go api/matchfunction.swagger.json
 cmd/minimatch/minimatch$(EXE_EXTENSION): pkg/pb/messages.pb.go
@@ -796,7 +840,6 @@ clean-secrets:
 
 clean-protos:
 	rm -rf $(REPOSITORY_ROOT)/build/prototmp/
-	rm -rf $(REPOSITORY_ROOT)/csharp/OpenMatch/*.cs
 	rm -rf $(REPOSITORY_ROOT)/pkg/pb/
 	rm -rf $(REPOSITORY_ROOT)/internal/ipb/
 
@@ -804,10 +847,11 @@ clean-binaries:
 	rm -rf $(REPOSITORY_ROOT)/cmd/backend/backend$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/cmd/synchronizer/synchronizer$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/cmd/frontend/frontend$(EXE_EXTENSION)
-	rm -rf $(REPOSITORY_ROOT)/cmd/mmlogic/mmlogic$(EXE_EXTENSION)
+	rm -rf $(REPOSITORY_ROOT)/cmd/query/query$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/cmd/minimatch/minimatch$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/examples/functions/golang/soloduel/soloduel$(EXE_EXTENSION)
-	rm -rf $(REPOSITORY_ROOT)/test/evaluator/simple$(EXE_EXTENSION)
+	rm -rf $(REPOSITORY_ROOT)/test/matchfunction/matchfunction$(EXE_EXTENSION)
+	rm -rf $(REPOSITORY_ROOT)/test/evaluator/evaluator$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/cmd/swaggerui/swaggerui$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/tools/certgen/certgen$(EXE_EXTENSION)
 	rm -rf $(REPOSITORY_ROOT)/tools/reaper/reaper$(EXE_EXTENSION)
@@ -830,17 +874,13 @@ clean-chart:
 clean-install-yaml:
 	rm -f $(REPOSITORY_ROOT)/install/yaml/*
 
-clean-stress-test-tools:
-	rm -rf $(TOOLCHAIN_DIR)/python
-	rm -f $(REPOSITORY_ROOT)/test/stress/*.csv
-
 clean-swagger-docs:
 	rm -rf $(REPOSITORY_ROOT)/api/*.json
 
 clean-third-party:
 	rm -rf $(REPOSITORY_ROOT)/third_party/
 
-clean: clean-images clean-binaries clean-build clean-install-yaml clean-stress-test-tools clean-secrets clean-terraform clean-third-party clean-protos clean-swagger-docs
+clean: clean-images clean-binaries clean-build clean-install-yaml clean-secrets clean-terraform clean-third-party clean-protos clean-swagger-docs
 
 proxy-frontend: build/toolchain/bin/kubectl$(EXE_EXTENSION)
 	@echo "Frontend Health: http://localhost:$(FRONTEND_PORT)/healthz"
@@ -854,11 +894,11 @@ proxy-backend: build/toolchain/bin/kubectl$(EXE_EXTENSION)
 	@echo "Backend Trace: http://localhost:$(BACKEND_PORT)/debug/tracez"
 	$(KUBECTL) port-forward --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) $(shell $(KUBECTL) get pod --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) --selector="app=open-match,component=backend,release=$(OPEN_MATCH_HELM_NAME)" --output jsonpath='{.items[0].metadata.name}') $(BACKEND_PORT):51505 $(PORT_FORWARD_ADDRESS_FLAG)
 
-proxy-mmlogic: build/toolchain/bin/kubectl$(EXE_EXTENSION)
-	@echo "MmLogic Health: http://localhost:$(MMLOGIC_PORT)/healthz"
-	@echo "MmLogic RPC: http://localhost:$(MMLOGIC_PORT)/debug/rpcz"
-	@echo "MmLogic Trace: http://localhost:$(MMLOGIC_PORT)/debug/tracez"
-	$(KUBECTL) port-forward --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) $(shell $(KUBECTL) get pod --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) --selector="app=open-match,component=mmlogic,release=$(OPEN_MATCH_HELM_NAME)" --output jsonpath='{.items[0].metadata.name}') $(MMLOGIC_PORT):51503 $(PORT_FORWARD_ADDRESS_FLAG)
+proxy-query: build/toolchain/bin/kubectl$(EXE_EXTENSION)
+	@echo "QueryService Health: http://localhost:$(QUERY_PORT)/healthz"
+	@echo "QueryService RPC: http://localhost:$(QUERY_PORT)/debug/rpcz"
+	@echo "QueryService Trace: http://localhost:$(QUERY_PORT)/debug/tracez"
+	$(KUBECTL) port-forward --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) $(shell $(KUBECTL) get pod --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) --selector="app=open-match,component=query,release=$(OPEN_MATCH_HELM_NAME)" --output jsonpath='{.items[0].metadata.name}') $(QUERY_PORT):51503 $(PORT_FORWARD_ADDRESS_FLAG)
 
 proxy-synchronizer: build/toolchain/bin/kubectl$(EXE_EXTENSION)
 	@echo "Synchronizer Health: http://localhost:$(SYNCHRONIZER_PORT)/healthz"
@@ -889,13 +929,9 @@ proxy-demo: build/toolchain/bin/kubectl$(EXE_EXTENSION)
 	@echo "View Demo: http://localhost:$(DEMO_PORT)"
 	$(KUBECTL) port-forward --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE)-demo $(shell $(KUBECTL) get pod --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE)-demo --selector="app=open-match-demo,component=demo" --output jsonpath='{.items[0].metadata.name}') $(DEMO_PORT):51507 $(PORT_FORWARD_ADDRESS_FLAG)
 
-proxy-locust: build/toolchain/bin/kubectl$(EXE_EXTENSION)
-	@echo "Locust UI: http://localhost:$(LOCUST_PORT)"
-	$(KUBECTL) port-forward --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) $(shell $(KUBECTL) get pod --namespace $(OPEN_MATCH_KUBERNETES_NAMESPACE) --selector="app=open-match-test,component=locust-master,release=$(OPEN_MATCH_HELM_NAME)" --output jsonpath='{.items[0].metadata.name}') $(LOCUST_PORT):8089 $(PORT_FORWARD_ADDRESS_FLAG)
-
 # Run `make proxy` instead to run everything at the same time.
 # If you run this directly it will just run each proxy sequentially.
-proxy-all: proxy-frontend proxy-backend proxy-mmlogic proxy-grafana proxy-prometheus proxy-jaeger proxy-synchronizer proxy-ui proxy-dashboard proxy-demo
+proxy-all: proxy-frontend proxy-backend proxy-query proxy-grafana proxy-prometheus proxy-jaeger proxy-synchronizer proxy-ui proxy-dashboard proxy-demo
 
 proxy:
 	# This is an exception case where we'll call recursive make.
@@ -904,9 +940,6 @@ proxy:
 
 update-deps:
 	$(GO) mod tidy
-
-build-csharp: build/toolchain/dotnet/ csharp/OpenMatch/Annotations.cs csharp/OpenMatch/Openapiv2.cs
-	(cd $(REPOSITORY_ROOT)/csharp/OpenMatch && $(DOTNET) build -o .)
 
 third_party/: third_party/google/api third_party/protoc-gen-swagger/options third_party/swaggerui/
 

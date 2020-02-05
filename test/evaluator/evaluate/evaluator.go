@@ -20,7 +20,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/sirupsen/logrus"
-	"open-match.dev/open-match/internal/testing/customize/evaluator"
+	"open-match.dev/open-match/internal/testing/evaluator"
 	"open-match.dev/open-match/pkg/pb"
 )
 
@@ -38,7 +38,7 @@ type matchInp struct {
 
 // Evaluate is where your custom evaluation logic lives.
 // This sample evaluator sorts and deduplicates the input matches.
-func Evaluate(p *evaluator.Params) ([]*pb.Match, error) {
+func Evaluate(p *evaluator.Params) ([]string, error) {
 	matches := make([]*matchInp, 0, len(p.Matches))
 	nilEvlautionInputs := 0
 
@@ -83,7 +83,7 @@ func Evaluate(p *evaluator.Params) ([]*pb.Match, error) {
 		d.maybeAdd(m)
 	}
 
-	return d.results, nil
+	return d.resultIDs, nil
 }
 
 type collidingMatch struct {
@@ -92,7 +92,7 @@ type collidingMatch struct {
 }
 
 type decollider struct {
-	results     []*pb.Match
+	resultIDs   []string
 	ticketsUsed map[string]*collidingMatch
 }
 
@@ -117,7 +117,7 @@ func (d *decollider) maybeAdd(m *matchInp) {
 		}
 	}
 
-	d.results = append(d.results, m.match)
+	d.resultIDs = append(d.resultIDs, m.match.GetMatchId())
 }
 
 type byScore []*matchInp

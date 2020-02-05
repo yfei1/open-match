@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Default values for open-match-test.
+# Default values for open-match-customize.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
@@ -20,13 +20,13 @@ function:
   enabled: false
   replicas: 3
   portType: ClusterIP
-  image: open-match.dev/open-match/examples/functions/golang/soloduel
+  image: open-match.dev/open-match/cmd/scale-mmf
 
 evaluator:
   enabled: false
   replicas: 3
   portType: ClusterIP
-  image: open-match.dev/open-match/examples/evaluator/golang/simple
+  image: open-match.dev/open-match/cmd/scale-evaluator
 
 evaluatorConfigs: 
   # We use harness to implement the MMFs. MMF itself only requires one configmap but harness expects two,

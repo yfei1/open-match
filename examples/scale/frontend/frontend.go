@@ -23,10 +23,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"go.opencensus.io/trace"
 	"open-match.dev/open-match/examples/scale/scenarios"
-	"open-match.dev/open-match/examples/scale/tickets"
 	"open-match.dev/open-match/internal/config"
-	"open-match.dev/open-match/internal/logging"
 	"open-match.dev/open-match/internal/rpc"
+	"open-match.dev/open-match/internal/telemetry"
 	"open-match.dev/open-match/pkg/pb"
 )
 
@@ -40,33 +39,28 @@ var (
 	numOfRoutineCreate = 8
 
 	totalCreated uint32
+
+	mTicketsCreated        = telemetry.Counter("scale_frontend_tickets_created", "tickets created")
+	mTicketCreationsFailed = telemetry.Counter("scale_frontend_ticket_creations_failed", "tickets created")
 )
 
 // Run triggers execution of the scale frontend component that creates
 // tickets at scale in Open Match.
-func Run() {
-	cfg, err := config.Read()
-	if err != nil {
-		logger.WithFields(logrus.Fields{
-			"error": err.Error(),
-		}).Fatal("cannot read configuration.")
-	}
+func BindService(p *rpc.ServerParams, cfg config.View) error {
+	go run(cfg)
 
-	logging.ConfigureLogging(cfg)
+	return nil
+}
+
+func run(cfg config.View) {
 	conn, err := rpc.GRPCClientFromConfig(cfg, "api.frontend")
 	if err != nil {
 		logger.WithFields(logrus.Fields{
 			"error": err.Error(),
 		}).Fatal("failed to get Frontend connection")
 	}
+	fe := pb.NewFrontendServiceClient(conn)
 
-	defer conn.Close()
-	fe := pb.NewFrontendClient(conn)
-
-	create(cfg, fe)
-}
-
-func create(cfg config.View, fe pb.FrontendClient) {
 	w := logger.Writer()
 	defer w.Close()
 
@@ -108,13 +102,13 @@ func create(cfg config.View, fe pb.FrontendClient) {
 	}
 }
 
-func createPerCycle(wg *sync.WaitGroup, fe pb.FrontendClient, ticketPerRoutine int, start time.Time) {
+func createPerCycle(wg *sync.WaitGroup, fe pb.FrontendServiceClient, ticketPerRoutine int, start time.Time) {
 	defer wg.Done()
 	cycleCreated := 0
 
 	for j := 0; j < ticketPerRoutine; j++ {
 		req := &pb.CreateTicketRequest{
-			Ticket: tickets.Ticket(),
+			Ticket: activeScenario.Ticket(),
 		}
 
 		ctx, span := trace.StartSpan(context.Background(), "scale.frontend/CreateTicket")
@@ -128,10 +122,13 @@ func createPerCycle(wg *sync.WaitGroup, fe pb.FrontendClient, ticketPerRoutine i
 
 		time.Sleep(timeLeft / time.Duration(ticketsLeft))
 
-		if _, err := fe.CreateTicket(ctx, req); err != nil {
+		if _, err := fe.CreateTicket(ctx, req); err == nil {
+			cycleCreated++
+			telemetry.RecordUnitMeasurement(ctx, mTicketsCreated)
+		} else {
 			statProcessor.RecordError("failed to create a ticket", err)
+			telemetry.RecordUnitMeasurement(ctx, mTicketCreationsFailed)
 		}
-		cycleCreated++
 	}
 
 	atomic.AddUint32(&totalCreated, uint32(cycleCreated))
