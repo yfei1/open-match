@@ -18,7 +18,7 @@ var (
 		MMF:                          queryPoolsWrapper(battleRoyalMmf),
 		Evaluator:                    fifoEvaluate,
 		FrontendTotalTicketsToCreate: -1,
-		FrontendTicketCreatedQPS:     100,
+		FrontendTicketCreatedQPS:     500,
 		BackendAssignsTickets:        true,
 		BackendDeletesTickets:        true,
 		Ticket:                       battleRoyalTicket,

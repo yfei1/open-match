@@ -206,89 +206,6 @@ local-cloud-build: LOCAL_CLOUD_BUILD_PUSH = # --push
 local-cloud-build: gcloud
 	cloud-build-local --config=cloudbuild.yaml --dryrun=false $(LOCAL_CLOUD_BUILD_PUSH) --substitutions SHORT_SHA=$(SHORT_SHA),_GCB_POST_SUBMIT=$(_GCB_POST_SUBMIT),_GCB_LATEST_VERSION=$(_GCB_LATEST_VERSION),BRANCH_NAME=$(BRANCH_NAME) .
 
-<<<<<<< HEAD
-=======
-################################################################################
-## #############################################################################
-## Image commands:
-## These commands are auto-generated based on a complete list of images.  All
-## folders in cmd/ are turned into an image using Dockerfile.cmd.  Additional
-## images are specified by the IMAGES variable.  Image commands ommit the
-## "openmatch-" prefix on the image name and tags.
-##
-
-#######################################
-## build-images / build-<image name>-image: builds images locally
-##
-build-images: $(foreach IMAGE,$(IMAGES),build-$(IMAGE)-image)
-
-# Include all-protos here so that all dependencies are guaranteed to be downloaded after the base image is created.
-# This is important so that the repository does not have any mutations while building individual images.
-build-base-build-image: docker $(ALL_PROTOS)
-	docker build -f Dockerfile.base-build -t open-match-base-build -t $(REGISTRY)/openmatch-base-build:$(TAG) -t $(REGISTRY)/openmatch-base-build:$(ALTERNATE_TAG) .
-
-$(foreach CMD,$(CMDS),build-$(CMD)-image): build-%-image: docker build-base-build-image
-	docker build \
-		-f Dockerfile.cmd \
-		$(IMAGE_BUILD_ARGS) \
-		--build-arg=IMAGE_TITLE=$* \
-		-t $(REGISTRY)/openmatch-$*:$(TAG) \
-		-t $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG) \
-		.
-
-build-mmf-go-soloduel-image: docker build-base-build-image
-	docker build -f examples/functions/golang/soloduel/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-soloduel:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-soloduel:$(ALTERNATE_TAG) .
-
-build-mmf-go-pool-image: docker build-base-build-image
-	docker build -f test/matchfunction/Dockerfile -t $(REGISTRY)/openmatch-mmf-go-pool:$(TAG) -t $(REGISTRY)/openmatch-mmf-go-pool:$(ALTERNATE_TAG) .
-
-build-evaluator-go-simple-image: docker build-base-build-image
-	docker build -f test/evaluator/Dockerfile -t $(REGISTRY)/openmatch-evaluator-go-simple:$(TAG) -t $(REGISTRY)/openmatch-evaluator-go-simple:$(ALTERNATE_TAG) .
-
-#######################################
-## push-images / push-<image name>-image: builds and pushes images to your
-## container registry.
-##
-push-images: $(foreach IMAGE,$(IMAGES),push-$(IMAGE)-image)
-
-$(foreach IMAGE,$(IMAGES),push-$(IMAGE)-image): push-%-image: build-%-image docker
-	docker push $(REGISTRY)/openmatch-$*:$(TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG)
-ifeq ($(_GCB_POST_SUBMIT),1)
-	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(VERSIONED_CANARY_TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(VERSIONED_CANARY_TAG)
-ifeq ($(BASE_VERSION),0.0.0-dev)
-	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(DATED_CANARY_TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(DATED_CANARY_TAG)
-	docker tag $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(CANARY_TAG)
-	docker push $(REGISTRY)/openmatch-$*:$(CANARY_TAG)
-endif
-endif
-
-#######################################
-## retag-images / retag-<image name>-image: publishes images on the public
-## container registry.  Used for publishing releases.
-##
-retag-images: $(foreach IMAGE,$(IMAGES),retag-$(IMAGE)-image)
-
-retag-%-image: SOURCE_REGISTRY = gcr.io/$(OPEN_MATCH_BUILD_PROJECT_ID)
-retag-%-image: TARGET_REGISTRY = gcr.io/$(OPEN_MATCH_PUBLIC_IMAGES_PROJECT_ID)
-retag-%-image: SOURCE_TAG = canary
-$(foreach IMAGE,$(IMAGES),retag-$(IMAGE)-image): retag-%-image: docker
-	docker pull $(SOURCE_REGISTRY)/openmatch-$*:$(SOURCE_TAG)
-	docker tag $(SOURCE_REGISTRY)/openmatch-$*:$(SOURCE_TAG) $(TARGET_REGISTRY)/openmatch-$*:$(TAG)
-	docker push $(TARGET_REGISTRY)/openmatch-$*:$(TAG)
-
-#######################################
-## clean-images / clean-<image name>-image: removes images from local docker
-##
-clean-images: docker $(foreach IMAGE,$(IMAGES),clean-$(IMAGE)-image)
-	-docker rmi -f open-match-base-build
-
-$(foreach IMAGE,$(IMAGES),clean-$(IMAGE)-image): clean-%-image:
-	-docker rmi -f $(REGISTRY)/openmatch-$*:$(TAG) $(REGISTRY)/openmatch-$*:$(ALTERNATE_TAG)
-
->>>>>>> be0cebd457bef63f3ac12fbc84b9d00e4d7de8b7
 #####################################################################################################################
 update-chart-deps: build/toolchain/bin/helm$(EXE_EXTENSION)
 	(cd $(REPOSITORY_ROOT)/install/helm/open-match; $(HELM) repo add incubator https://kubernetes-charts-incubator.storage.googleapis.com; $(HELM) dependency update)
@@ -334,7 +251,7 @@ install-demo: build/toolchain/bin/helm$(EXE_EXTENSION)
 
 # install-large-chart will install open-match-core, open-match-demo with the demo evaluator and mmf, and telemetry supports.
 install-large-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
+	$(HELM) template $(OPEN_MATCH_HELM_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.evaluator.enabled=true \
@@ -344,22 +261,23 @@ install-large-chart: install-chart-prerequisite install-demo build/toolchain/bin
 
 # install-chart will install open-match-core, open-match-demo, with the demo evaluator and mmf.
 install-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
+	$(HELM) template $(OPEN_MATCH_HELM_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.evaluator.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -W -f -
 
 # install-scale-chart will wait for installing open-match-core with telemetry supports then install open-match-scale chart.
 install-scale-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
-	$(HELM) template $(OPEN_MATCH_RELEASE_NAME) $(HELM_KO_FLAGS) install/helm/open-match -f install/helm/open-match/values-production.yaml \
+	$(HELM) template $(OPEN_MATCH_HELM_NAME) $(HELM_KO_FLAGS) install/helm/open-match -f install/helm/open-match/values-production.yaml \
 		--set open-match-telemetry.enabled=true \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.function.enabled=true \
 		--set open-match-customize.evaluator.enabled=true \
-		--set open-match-customize.function.image=open-match.dev/open-match/examples/functions/golang/rosterbased \
 		--set global.telemetry.grafana.enabled=true \
 		--set global.telemetry.jaeger.enabled=false \
 		--set global.telemetry.prometheus.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -f -
-	$(HELM) template $(OPEN_MATCH_RELEASE_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) -f install/helm/open-match/values-production.yaml \
+
+install-scale-chart2:
+	$(HELM) template $(OPEN_MATCH_HELM_NAME)-scale  install/helm/open-match $(HELM_KO_FLAGS) -f install/helm/open-match/values-production.yaml \
 		--set open-match-core.enabled=false \
 		--set open-match-core.redis.enabled=false \
 		--set global.telemetry.prometheus.enabled=true \
