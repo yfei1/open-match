@@ -82,9 +82,8 @@ func newRedis(cfg config.View) Service {
 		MaxActive:   cfg.GetInt("redis.pool.maxActive"),
 		IdleTimeout: cfg.GetDuration("redis.pool.idleTimeout"),
 		Wait:        true,
-		TestOnBorrow: func(c redis.Conn, t time.Time) error {
-			// Check if this connection have been returned for more than 15 seconds, if so, do a PING check.
-			if time.Since(t) < 15*time.Second {
+		TestOnBorrow: func(c redis.Conn, lastUsed time.Time) error {
+			if time.Since(lastUsed) < 15*time.Second {
 				return nil
 			}
 
