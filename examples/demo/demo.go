@@ -43,7 +43,7 @@ func Run(comps map[string]func(*components.DemoShared)) {
 
 	_, err := os.Stat(dataPath)
 	if err != nil {
-		log.Fatalf("cannot access directory %s, desc: %w", dataPath, err)
+		log.Fatalf("cannot access directory %s, desc: %s", dataPath, err.Error)
 	}
 
 	fileServe := http.FileServer(http.Dir(dataPath))

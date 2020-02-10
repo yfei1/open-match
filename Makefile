@@ -260,7 +260,7 @@ install-large-chart: install-chart-prerequisite install-demo build/toolchain/bin
 		--set global.telemetry.prometheus.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -W -f -
 
 # install-chart will install open-match-core, open-match-demo, with the demo evaluator and mmf.
-install-chart: install-chart-prerequisite install-demo build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
+install-chart: install-chart-prerequisite build/toolchain/bin/helm$(EXE_EXTENSION) install/helm/open-match/secrets/
 	$(HELM) template $(OPEN_MATCH_HELM_NAME) $(HELM_KO_FLAGS) install/helm/open-match \
 		--set open-match-customize.enabled=true \
 		--set open-match-customize.evaluator.enabled=true | $(KO) apply -t $(TAG) -n open-match -P -W -f -

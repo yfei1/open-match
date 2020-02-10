@@ -59,7 +59,7 @@ var ActiveScenario = func() *Scenario {
 
 	return &Scenario{
 		FrontendTotalTicketsToCreate: -1,
-		FrontendTicketCreatedQPS:     100,
+		FrontendTicketCreatedQPS:     500,
 
 		BackendAssignsTickets: true,
 		BackendDeletesTickets: true,
