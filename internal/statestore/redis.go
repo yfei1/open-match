@@ -19,6 +19,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"math/rand"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -43,6 +44,9 @@ var (
 	mRedisConnLatencyMs  = telemetry.HistogramWithBounds("redis/connectlatency", "latency to get a redis connection", "ms", telemetry.HistogramBounds)
 	mRedisConnPoolActive = telemetry.Gauge("redis/connectactivecount", "number of connections in the pool, includes idle plus connections in use")
 	mRedisConnPoolIdle   = telemetry.Gauge("redis/connectidlecount", "number of idle connections in the pool")
+	mMasterOffset        = telemetry.Gauge("redis/master_offset", "")
+	mSlaveOffset         = telemetry.Gauge("redis/slave_offset", "")
+	mDelta               = telemetry.Gauge("redis/delta", "")
 )
 
 type redisBackend struct {
@@ -242,11 +246,75 @@ func (rb *redisBackend) HealthCheck(ctx context.Context) error {
 	telemetry.SetGauge(ctx, mRedisConnPoolActive, int64(poolStats.ActiveCount))
 	telemetry.SetGauge(ctx, mRedisConnPoolIdle, int64(poolStats.IdleCount))
 
-	_, err = redisConn.Do("PING")
-	// Encountered an issue getting a connection from the pool.
+	sConn, err := rb.readPool.GetContext(ctx)
 	if err != nil {
-		return status.Errorf(codes.Unavailable, "%v", err)
+		return status.Errorf(codes.Unavailable, "aaa: %v", err)
 	}
+	defer handleConnectionClose(&sConn)
+
+	mConn, err := rb.redisPool.GetContext(ctx)
+	if err != nil {
+		return status.Errorf(codes.Unavailable, "bbb: %v", err)
+	}
+	defer handleConnectionClose(&mConn)
+
+	var t1, t2 time.Time
+	var wg sync.WaitGroup
+	wg.Add(2)
+
+	go func(wg *sync.WaitGroup, t *time.Time) {
+		defer wg.Done()
+
+		mBytes, err := mConn.Do("INFO", "replication")
+		if err != nil {
+			redisLogger.Debugf("mInfo: %v, err: %s", mBytes, err.Error())
+			return
+		}
+		*t = time.Now()
+
+		ba := make([]byte, 0, len(mBytes.([]uint8)))
+		for _, bytes := range mBytes.([]uint8) {
+			ba = append(ba, byte(bytes))
+		}
+		infos := strings.Split(string(ba), "\r\n")
+		for _, info := range infos {
+			kv := strings.Split(info, ":")
+			if kv[0] == "master_repl_offset" {
+				redisLogger.Debugf("master_repl_offset: %s", kv[1])
+				offset, _ := strconv.Atoi(kv[1])
+				telemetry.SetGauge(ctx, mMasterOffset, int64(offset))
+			}
+		}
+	}(&wg, &t1)
+
+	go func(wg *sync.WaitGroup, t *time.Time) {
+		defer wg.Done()
+
+		sBytes, err := sConn.Do("INFO", "replication")
+		if err != nil {
+			redisLogger.Debugf("sInfo: %v, err: %s", sBytes, err.Error())
+			return
+		}
+		*t = time.Now()
+
+		ba := make([]byte, 0, len(sBytes.([]uint8)))
+		for _, bytes := range sBytes.([]uint8) {
+			ba = append(ba, byte(bytes))
+		}
+		infos := strings.Split(string(ba), "\r\n")
+		for _, info := range infos {
+			kv := strings.Split(info, ":")
+			if kv[0] == "slave_repl_offset" {
+				redisLogger.Debugf("slave_repl_offset: %s", kv[1])
+				offset, _ := strconv.Atoi(kv[1])
+				telemetry.SetGauge(ctx, mSlaveOffset, int64(offset))
+			}
+		}
+	}(&wg, &t2)
+
+	wg.Wait()
+	delta := t1.Sub(t2)
+	telemetry.SetGauge(ctx, mDelta, delta.Nanoseconds())
 
 	return nil
 }
