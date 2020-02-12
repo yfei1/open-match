@@ -631,9 +631,6 @@ func (rb *redisBackend) FilterTickets(ctx context.Context, pool *pb.Pool, pageSi
 		}
 	}
 
-	if len(deindexed) != 0 {
-		redisLogger.Debugf("size: %d", len(deindexed))
-	}
 	idSet = set.Difference(idSet, deindexed)
 
 	// TODO: finish reworking this after the proto changes.
@@ -654,7 +651,8 @@ func (rb *redisBackend) FilterTickets(ctx context.Context, pool *pb.Pool, pageSi
 				err = proto.Unmarshal(b, t)
 				if err != nil {
 					redisLogger.WithFields(logrus.Fields{
-						"key": page[i],
+						"key":    page[i],
+						"values": b,
 					}).WithError(err).Error("Failed to unmarshal ticket from redis.")
 					return status.Errorf(codes.Internal, "%v", err)
 				}
@@ -709,7 +707,8 @@ func (rb *redisBackend) UpdateAssignments(ctx context.Context, ids []string, ass
 			err = proto.Unmarshal(ticketByte, t)
 			if err != nil {
 				redisLogger.WithFields(logrus.Fields{
-					"key": ids[i],
+					"key":   ids[i],
+					"value": ticketByte,
 				}).WithError(err).Error("Failed to unmarshal ticket from redis.")
 				return status.Errorf(codes.Internal, "%v", err)
 			}

@@ -112,7 +112,7 @@ redis:
   # http://download.redis.io/redis-stable/redis.conf
   configmap: |
     maxclients 100000
-    maxmemory 500000000
+    maxmemory 2000000000
     replica-serve-stale-data yes
     replica-read-only yes
   sentinel:
@@ -187,7 +187,7 @@ open-match-core:
       maxIdle: 500
       maxActive: 500
       idleTimeout: 0
-      healthCheckTimeout: 300ms
+      healthCheckTimeout: 4000ms
 
 # Controls if users need to install scale testing setup for Open Match.
 open-match-scale:
