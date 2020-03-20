@@ -23,6 +23,24 @@ import (
 )
 
 var (
+	TotalBytesPerTicketView = measureToView(
+		TotalBytesPerTicket,
+		"openmatch.dev/total_bytes_per_ticket",
+		"Total bytes per ticket",
+		DefaultBytesDistribution,
+	)
+
+	ExtensionBytesPerTicketView = measureToView(
+		ExtensionBytesPerTicket,
+		"openmatch.dev/extension_bytes_per_ticket",
+		"Extension bytes per ticket",
+		DefaultBytesDistribution,
+	)
+)
+
+////////////////////////////////////////////
+
+var (
 	// HistogramBounds defines a unified bucket boundaries for all histogram typed time metrics in Open Match
 	HistogramBounds = []float64{0, 50, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600, 51200}
 )

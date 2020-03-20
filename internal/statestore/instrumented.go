@@ -16,7 +16,9 @@ package statestore
 
 import (
 	"context"
+	"time"
 
+	"go.opencensus.io/tag"
 	"go.opencensus.io/trace"
 	"open-match.dev/open-match/internal/telemetry"
 	"open-match.dev/open-match/pkg/pb"
@@ -54,6 +56,10 @@ func (is *instrumentedService) HealthCheck(ctx context.Context) error {
 
 // CreateTicket creates a new Ticket in the state storage. If the id already exists, it will be overwritten.
 func (is *instrumentedService) CreateTicket(ctx context.Context, ticket *pb.Ticket) error {
+	ctx, err := tag.New(ctx, tag.Insert(TicketStatus, "CREATED"), tag.Insert(TicketLastUpdateTimestamp, time.Now().UnixNano()))
+	if err != nil {
+		return instrumentedLogger.Fatalf("failed to insert created status, desc: %w", err)
+	}
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.CreateTicket")
 	defer span.End()
 	defer telemetry.RecordUnitMeasurement(ctx, mStateStoreCreateTicketCount)
@@ -78,6 +84,10 @@ func (is *instrumentedService) DeleteTicket(ctx context.Context, id string) erro
 
 // IndexTicket indexes the Ticket id for the configured index fields.
 func (is *instrumentedService) IndexTicket(ctx context.Context, ticket *pb.Ticket) error {
+	ctx, err := tag.New(ctx, tag.Insert(TicketStatus, "INDEXED"), tag.Insert(TicketLastUpdateTimestamp, time.Now().UnixNano()))
+	if err != nil {
+		return instrumentedLogger.Fatalf("failed to insert indexed status, desc: %w", err)
+	}
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.IndexTicket")
 	defer span.End()
 	defer telemetry.RecordUnitMeasurement(ctx, mStateStoreIndexTicketCount)
@@ -132,6 +142,10 @@ func (is *instrumentedService) GetAssignments(ctx context.Context, id string, ca
 
 // AddTicketsToIgnoreList appends new proposed tickets to the proposed sorted set with current timestamp
 func (is *instrumentedService) AddTicketsToIgnoreList(ctx context.Context, ids []string) error {
+	ctx, err := tag.New(ctx, tag.Upsert(TicketStatus, "IGNORE_LIST"), tag.Insert(TicketLastUpdateTimestamp, time.Now().UnixNano()))
+	if err != nil {
+		return instrumentedLogger.Fatalf("failed to insert ignore_list status, desc: %w", err)
+	}
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.AddTicketsToIgnoreList")
 	defer span.End()
 	defer telemetry.RecordNUnitMeasurement(ctx, mStateStoreAddTicketsToIgnoreListCount, int64(len(ids)))
@@ -140,6 +154,7 @@ func (is *instrumentedService) AddTicketsToIgnoreList(ctx context.Context, ids [
 
 // DeleteTicketsFromIgnoreList deletes tickets from the proposed sorted set
 func (is *instrumentedService) DeleteTicketsFromIgnoreList(ctx context.Context, ids []string) error {
+	// TODO: parse the ctx map and calculate time in the ignore list
 	ctx, span := trace.StartSpan(ctx, "statestore/instrumented.DeleteTicketsFromIgnoreList")
 	defer span.End()
 	defer telemetry.RecordNUnitMeasurement(ctx, mStateStoreDeleteTicketFromIgnoreListCount, int64(len(ids)))
