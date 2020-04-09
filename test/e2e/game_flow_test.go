@@ -120,12 +120,12 @@ func TestGameMatchWorkFlow(t *testing.T) {
 	var err error
 	// 1. Create a few tickets with delicate designs and hand crafted search fields
 	for i := 0; i < len(tickets); i++ {
-		var ctResp *pb.CreateTicketResponse
-		ctResp, err = fe.CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: tickets[i]}, grpc.WaitForReady(true))
+		var ticket *pb.Ticket
+		ticket, err = fe.CreateTicket(ctx, &pb.CreateTicketRequest{Ticket: tickets[i]}, grpc.WaitForReady(true))
 		require.Nil(t, err)
-		require.NotNil(t, ctResp)
+		require.NotNil(t, ticket)
 		// Assign Open Match ids back to the input tickets
-		*tickets[i] = *ctResp.GetTicket()
+		*tickets[i] = *ticket
 	}
 
 	fmReq := &pb.FetchMatchesRequest{
@@ -174,7 +174,16 @@ func TestGameMatchWorkFlow(t *testing.T) {
 		for _, ticket := range m.Tickets {
 			tids = append(tids, ticket.GetId())
 		}
-		gotAtResp, err = be.AssignTickets(ctx, &pb.AssignTicketsRequest{TicketIds: tids, Assignment: &pb.Assignment{Connection: "agones-1"}}, grpc.WaitForReady(true))
+		req := &pb.AssignTicketsRequest{
+			Assignments: []*pb.AssignmentGroup{
+				{
+					TicketIds:  tids,
+					Assignment: &pb.Assignment{Connection: "agones-1"},
+				},
+			},
+		}
+
+		gotAtResp, err = be.AssignTickets(ctx, req, grpc.WaitForReady(true))
 		require.Nil(t, err)
 		require.NotNil(t, gotAtResp)
 	}
@@ -185,10 +194,8 @@ func TestGameMatchWorkFlow(t *testing.T) {
 	validateFetchMatchesResponse(ctx, t, matches, be, fmReq)
 
 	// 7. Call frontend.DeleteTicket to delete the tickets returned in step 6.
-	var gotDtResp *pb.DeleteTicketResponse
-	gotDtResp, err = fe.DeleteTicket(ctx, &pb.DeleteTicketRequest{TicketId: ticket1.GetId()}, grpc.WaitForReady(true))
+	_, err = fe.DeleteTicket(ctx, &pb.DeleteTicketRequest{TicketId: ticket1.GetId()}, grpc.WaitForReady(true))
 	require.Nil(t, err)
-	require.NotNil(t, gotDtResp)
 
 	// 8. Call backend.FetchMatches and verify the response does not contain the tickets got deleted.
 	time.Sleep(statestoreTesting.IgnoreListTTL)
