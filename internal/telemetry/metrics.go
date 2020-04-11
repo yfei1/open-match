@@ -22,21 +22,177 @@ import (
 	"go.opencensus.io/tag"
 )
 
+// Ticket related views
 var (
-	TotalBytesPerTicketView = measureToView(
+	TotalBytesPerTicketView = measureToDefaultView(
 		TotalBytesPerTicket,
 		"openmatch.dev/total_bytes_per_ticket",
 		"Total bytes per ticket",
 		DefaultBytesDistribution,
 	)
 
-	ExtensionBytesPerTicketView = measureToView(
-		ExtensionBytesPerTicket,
-		"openmatch.dev/extension_bytes_per_ticket",
-		"Extension bytes per ticket",
-		DefaultBytesDistribution,
+	SearchFieldsPerTicketView = measureToDefaultView(
+		SearchFieldsPerTicket,
+		"openmatch.dev/searchfields_per_ticket",
+		"SearchFields per ticket",
+		DefaultCountDistribution,
 	)
 )
+
+// Match related views
+var (
+	TotalMatches = measureToDefaultView(
+		TotalBytesPerMatch,
+		"openmatch.dev/total_matches",
+		"Total number of matches",
+		view.Count(),
+	)
+
+	TotalBytesPerMatchView = measureToDefaultView(
+		TotalBytesPerMatch,
+		"openmatch.dev/total_bytes_per_match",
+		"Total bytes per match",
+		DefaultBytesDistribution,
+	)
+
+	TicketsPerMatchView = measureToDefaultView(
+		TicketsPerMatch,
+		"openmatch.dev/tickets_per_match",
+		"Tickets per ticket",
+		DefaultCountDistribution,
+	)
+)
+
+// Query related views
+var (
+	TicketsPerQueryView = measureToDefaultView(
+		TicketsPerQuery,
+		"openmatch.dev/query/tickets_per_query",
+		"Tickets per query",
+		DefaultCountDistribution,
+	)
+
+	QueryCacheTotalItemsView = measureToDefaultView(
+		QueryCacheTotalItems,
+		"openmatch.dev/query/total_cache_items",
+		"Total number of tickets query service cached",
+		view.LastValue(),
+	)
+
+	QueryCacheDeltaItemsView = measureToDefaultView(
+		QueryCacheDeltaItems,
+		"openmatch.dev/query/delta_cache_items",
+		"Number of tickets cache delta items",
+		DefaultCountDistribution,
+	)
+
+	QueryCacheUpdateView = measureToDefaultView(
+		QueryCacheWaitingQueries,
+		"openmatch.dev/query/waiting_requests",
+		"Number of query cache updates in total",
+		view.Count(),
+	)
+
+	QueryCacheWaitingQueriesView = measureToDefaultView(
+		QueryCacheWaitingQueries,
+		"openmatch.dev/query/waiting_requests",
+		"Number of waiting requests in total",
+		DefaultCountDistribution,
+	)
+
+	QueryCacheUpdateLatencyView = measureToDefaultView(
+		QueryCacheUpdateLatency,
+		"openmatch.dev/query/update_latency",
+		"Time elapsed of each query cache update",
+		DefaultMillisecondsDistribution,
+	)
+)
+
+// Backend related views
+var (
+	TicketsAssignedView = measureToDefaultView(
+		TicketsAssigned,
+		"openmatch.dev/backend/tickets_assigned",
+		"Number of tickets assigned per request",
+		DefaultCountDistribution,
+	)
+
+	TicketsReleasedView = measureToDefaultView(
+		TicketsReleased,
+		"openmatch.dev/backend/tickets_released",
+		"Number of tickets released per request",
+		DefaultCountDistribution,
+	)
+)
+
+// Evaluator related views
+var (
+	MatchesPerEvaluateRequestView = measureToDefaultView(
+		MatchesPerEvaluateRequest,
+		"openmatch.dev/evaluator/matches_per_request",
+		"Number of matches sent to the evaluator per request",
+		DefaultCountDistribution,
+	)
+
+	MatchesPerEvaluateResponseView = measureToDefaultView(
+		MatchesPerEvaluateResponse,
+		"openmatch.dev/evaluator/matches_per_response",
+		"Number of matches sent to the evaluator per response",
+		DefaultCountDistribution,
+	)
+
+	CollidedMatchesPerEvaluateView = measureToDefaultView(
+		CollidedMatchesPerEvaluate,
+		"openmatch.dev/evaluator/collided_matches_per_call",
+		"Number of collided matches per default evaluator call",
+		DefaultCountDistribution,
+	)
+)
+
+// Synchronizer related views
+var (
+	SynchronizerIterationLatencyView = measureToDefaultView(
+		SynchronizerIterationLatency,
+		"openmatch.dev/synchronizer/iteration_latency",
+		"Time elapsed of each synchronizer iteration",
+		DefaultMillisecondsDistribution,
+	)
+
+	SynchronizerRegistrationWaitTimeView = measureToDefaultView(
+		SynchronizerRegistrationWaitTime,
+		"openmatch.dev/synchronizer/registration_wait_time",
+		"Time elapsed of registration wait time",
+		DefaultMillisecondsDistribution,
+	)
+
+	SynchronizerRegistrationMMFDoneTimeView = measureToDefaultView(
+		SynchronizerRegistrationMMFDoneTime,
+		"openmatch.dev/synchronizer/registration_mmf_done_time",
+		"Time elapsed wasted in registration window with done MMFs",
+		DefaultMillisecondsDistribution,
+	)
+)
+
+// DefaultViews are provided by this package by default is prometheus agent is enabled.
+var DefaultViews = []*view.View{
+	TotalBytesPerTicketView,
+	SearchFieldsPerTicketView,
+	TotalMatches,
+	TotalBytesPerMatchView,
+	TicketsPerMatchView,
+	TicketsPerQueryView,
+	QueryCacheTotalItemsView,
+	QueryCacheDeltaItemsView,
+	QueryCacheUpdateView,
+	QueryCacheWaitingQueriesView,
+	QueryCacheUpdateLatencyView,
+	MatchesPerEvaluateRequestView,
+	MatchesPerEvaluateResponseView,
+	CollidedMatchesPerEvaluateView,
+	SynchronizerIterationLatencyView,
+	SynchronizerRegistrationWaitTimeView,
+	SynchronizerRegistrationMMFDoneTimeView,
+}
 
 ////////////////////////////////////////////
 
