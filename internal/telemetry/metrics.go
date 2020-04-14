@@ -88,7 +88,7 @@ var (
 
 	QueryCacheUpdateView = measureToDefaultView(
 		QueryCacheWaitingQueries,
-		"openmatch.dev/query/waiting_requests",
+		"openmatch.dev/query/cache_updates",
 		"Number of query cache updates in total",
 		view.Count(),
 	)
