@@ -25,9 +25,9 @@ import (
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"open-match.dev/open-match/internal/appmain"
 	"open-match.dev/open-match/internal/config"
 	"open-match.dev/open-match/internal/filter"
-	"open-match.dev/open-match/internal/rpc"
 	"open-match.dev/open-match/internal/statestore"
 	"open-match.dev/open-match/internal/telemetry"
 	"open-match.dev/open-match/pkg/pb"
@@ -190,7 +190,7 @@ type ticketCache struct {
 	err     error
 }
 
-func newTicketCache(p *rpc.ServerParams, cfg config.View) *ticketCache {
+func newTicketCache(b *appmain.Bindings, cfg config.View) *ticketCache {
 	tc := &ticketCache{
 		store:           statestore.New(cfg),
 		requests:        make(chan *cacheRequest),
@@ -199,7 +199,7 @@ func newTicketCache(p *rpc.ServerParams, cfg config.View) *ticketCache {
 	}
 
 	tc.startRunRequest <- struct{}{}
-	p.AddHealthCheckFunc(tc.store.HealthCheck)
+	b.AddHealthCheckFunc(tc.store.HealthCheck)
 
 	return tc
 }

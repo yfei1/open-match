@@ -24,6 +24,7 @@ import (
 	"open-match.dev/open-match/internal/app/evaluator"
 	"open-match.dev/open-match/internal/app/evaluator/defaulteval"
 	"open-match.dev/open-match/internal/app/minimatch"
+	"open-match.dev/open-match/internal/appmain"
 	"open-match.dev/open-match/internal/rpc"
 	rpcTesting "open-match.dev/open-match/internal/rpc/testing"
 	statestoreTesting "open-match.dev/open-match/internal/statestore/testing"
@@ -125,7 +126,7 @@ func createMinimatchForTest(t *testing.T, evalTc *rpcTesting.TestContext) *rpcTe
 	tc := rpcTesting.MustServeInsecure(t, func(p *rpc.ServerParams) {
 		closer = statestoreTesting.New(t, cfg)
 		cfg.Set("storage.page.size", 10)
-		assert.Nil(t, minimatch.BindService(p, cfg))
+		assert.Nil(t, appmain.TemporaryBindWrapper(minimatch.BindService, p, cfg))
 	})
 	// TODO: Revisit the Minimatch test setup in future milestone to simplify passing config
 	// values between components. The backend needs to connect to to the synchronizer but when
@@ -162,9 +163,7 @@ func createMatchFunctionForTest(t *testing.T, c *rpcTesting.TestContext) *rpcTes
 		cfg.Set("api.query.grpcport", c.GetGRPCPort())
 		cfg.Set("api.query.httpport", c.GetHTTPPort())
 
-		assert.Nil(t, internalMmf.BindService(p, cfg, &internalMmf.FunctionSettings{
-			Func: mmf.MakeMatches,
-		}))
+		assert.Nil(t, appmain.TemporaryBindWrapper(internalMmf.BindServiceFor(mmf.MakeMatches), p, cfg))
 	})
 	return tc
 }
@@ -173,7 +172,7 @@ func createMatchFunctionForTest(t *testing.T, c *rpcTesting.TestContext) *rpcTes
 func createEvaluatorForTest(t *testing.T) *rpcTesting.TestContext {
 	tc := rpcTesting.MustServeInsecure(t, func(p *rpc.ServerParams) {
 		cfg := viper.New()
-		assert.Nil(t, evaluator.BindService(p, cfg, defaulteval.Evaluate))
+		assert.Nil(t, appmain.TemporaryBindWrapper(evaluator.BindServiceFor(defaulteval.Evaluate), p, cfg))
 	})
 
 	return tc
