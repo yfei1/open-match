@@ -276,7 +276,7 @@ Registration:
 	go func() {
 		allM1cSent.Wait()
 		m1c.cutoff()
-		stats.Record(ctx, telemetry.SynchronizerRegistrationMMFDoneTime.M(float64(s.registrationInterval())-float64(time.Since(rst)/time.Millisecond)))
+		stats.Record(ctx, telemetry.SynchronizerRegistrationMMFDoneTime.M(float64((s.registrationInterval()-time.Since(rst))/time.Millisecond)))
 	}()
 
 	cancelProposalCollection := time.AfterFunc(s.proposalCollectionInterval(), func() {
