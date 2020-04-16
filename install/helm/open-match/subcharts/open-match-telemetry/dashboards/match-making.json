@@ -15,11 +15,11 @@
     "editable": true,
     "gnetId": null,
     "graphTooltip": 0,
-    "id": 6,
+    "id": 3,
     "links": [],
     "panels": [
       {
-        "collapsed": true,
+        "collapsed": false,
         "gridPos": {
           "h": 1,
           "w": 24,
@@ -27,667 +27,367 @@
           "y": 0
         },
         "id": 10,
-        "panels": [
-          {
-            "aliasColors": {},
-            "bars": false,
-            "cacheTimeout": null,
-            "dashLength": 10,
-            "dashes": false,
-            "description": "",
-            "fill": 0,
-            "gridPos": {
-              "h": 8,
-              "w": 12,
-              "x": 0,
-              "y": 1
-            },
-            "id": 12,
-            "legend": {
-              "alignAsTable": true,
-              "avg": true,
-              "current": true,
-              "max": false,
-              "min": false,
-              "rightSide": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "options": {},
-            "percentage": false,
-            "pluginVersion": "6.2.4",
-            "pointradius": 2,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "interval": "",
-                "intervalFactor": 1,
-                "legendFormat": "99.9%-ile",
-                "refId": "A"
-              },
-              {
-                "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "99%-ile",
-                "refId": "B"
-              },
-              {
-                "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "95%-ile",
-                "refId": "C"
-              },
-              {
-                "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "90%-ile",
-                "refId": "D"
-              },
-              {
-                "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "50%-ile",
-                "refId": "F"
-              },
-              {
-                "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "10%-ile",
-                "refId": "H"
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeRegions": [],
-            "timeShift": null,
-            "title": "Total Bytes per Ticket",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "transparent": true,
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "decimals": null,
-                "format": "bytes",
-                "label": null,
-                "logBase": 2,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ],
-            "yaxis": {
-              "align": false,
-              "alignLevel": null
-            }
-          },
-          {
-            "aliasColors": {},
-            "bars": false,
-            "cacheTimeout": null,
-            "dashLength": 10,
-            "dashes": false,
-            "decimals": 0,
-            "description": "",
-            "fill": 0,
-            "gridPos": {
-              "h": 8,
-              "w": 12,
-              "x": 12,
-              "y": 1
-            },
-            "id": 14,
-            "legend": {
-              "alignAsTable": true,
-              "avg": false,
-              "current": true,
-              "max": false,
-              "min": false,
-              "rightSide": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "options": {},
-            "percentage": false,
-            "pluginVersion": "6.2.4",
-            "pointradius": 2,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "interval": "",
-                "intervalFactor": 1,
-                "legendFormat": "99.9%-ile",
-                "refId": "A"
-              },
-              {
-                "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "99%-ile",
-                "refId": "B"
-              },
-              {
-                "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "95%-ile",
-                "refId": "C"
-              },
-              {
-                "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "90%-ile",
-                "refId": "D"
-              },
-              {
-                "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "50%-ile",
-                "refId": "F"
-              },
-              {
-                "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "10%-ile",
-                "refId": "H"
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeRegions": [],
-            "timeShift": null,
-            "title": "SearchFields per Ticket",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "transparent": true,
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "decimals": null,
-                "format": "none",
-                "label": null,
-                "logBase": 2,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ],
-            "yaxis": {
-              "align": false,
-              "alignLevel": null
-            }
-          },
-          {
-            "aliasColors": {},
-            "bars": false,
-            "cacheTimeout": null,
-            "dashLength": 10,
-            "dashes": false,
-            "decimals": 0,
-            "description": "",
-            "fill": 0,
-            "gridPos": {
-              "h": 8,
-              "w": 12,
-              "x": 0,
-              "y": 9
-            },
-            "id": 15,
-            "legend": {
-              "alignAsTable": true,
-              "avg": false,
-              "current": true,
-              "max": false,
-              "min": false,
-              "rightSide": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "options": {},
-            "percentage": false,
-            "pluginVersion": "6.2.4",
-            "pointradius": 2,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "rate(openmatch_dev_)",
-                "format": "time_series",
-                "interval": "",
-                "intervalFactor": 1,
-                "legendFormat": "99.9%-ile",
-                "refId": "A"
-              },
-              {
-                "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "99%-ile",
-                "refId": "B"
-              },
-              {
-                "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "95%-ile",
-                "refId": "C"
-              },
-              {
-                "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "90%-ile",
-                "refId": "D"
-              },
-              {
-                "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "50%-ile",
-                "refId": "F"
-              },
-              {
-                "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "10%-ile",
-                "refId": "H"
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeRegions": [],
-            "timeShift": null,
-            "title": "Ticket Assigned/Release Rate",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "transparent": true,
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "decimals": null,
-                "format": "none",
-                "label": null,
-                "logBase": 2,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ],
-            "yaxis": {
-              "align": false,
-              "alignLevel": null
-            }
-          }
-        ],
+        "panels": [],
         "title": "Tickets",
         "type": "row"
       },
       {
-        "collapsed": true,
+        "aliasColors": {},
+        "bars": false,
+        "cacheTimeout": null,
+        "dashLength": 10,
+        "dashes": false,
+        "description": "",
+        "fill": 0,
         "gridPos": {
-          "h": 1,
-          "w": 24,
+          "h": 8,
+          "w": 12,
           "x": 0,
           "y": 1
         },
-        "id": 8,
-        "panels": [
+        "id": 12,
+        "legend": {
+          "alignAsTable": true,
+          "avg": true,
+          "current": true,
+          "max": false,
+          "min": false,
+          "rightSide": true,
+          "show": true,
+          "total": false,
+          "values": true
+        },
+        "lines": true,
+        "linewidth": 1,
+        "links": [],
+        "nullPointMode": "null",
+        "options": {},
+        "percentage": false,
+        "pluginVersion": "6.2.4",
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
           {
-            "aliasColors": {},
-            "bars": false,
-            "cacheTimeout": null,
-            "dashLength": 10,
-            "dashes": false,
-            "description": "",
-            "fill": 0,
-            "gridPos": {
-              "h": 8,
-              "w": 12,
-              "x": 0,
-              "y": 2
-            },
-            "id": 13,
-            "legend": {
-              "alignAsTable": true,
-              "avg": true,
-              "current": true,
-              "max": false,
-              "min": false,
-              "rightSide": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "options": {},
-            "percentage": false,
-            "pluginVersion": "6.2.4",
-            "pointradius": 2,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "interval": "",
-                "intervalFactor": 1,
-                "legendFormat": "99.9%-ile",
-                "refId": "A"
-              },
-              {
-                "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "99%-ile",
-                "refId": "B"
-              },
-              {
-                "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "95%-ile",
-                "refId": "C"
-              },
-              {
-                "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "90%-ile",
-                "refId": "D"
-              },
-              {
-                "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "50%-ile",
-                "refId": "F"
-              },
-              {
-                "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "10%-ile",
-                "refId": "H"
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeRegions": [],
-            "timeShift": null,
-            "title": "Total Bytes per Match",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "transparent": true,
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "decimals": null,
-                "format": "bytes",
-                "label": null,
-                "logBase": 2,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ],
-            "yaxis": {
-              "align": false,
-              "alignLevel": null
-            }
+            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "interval": "",
+            "intervalFactor": 1,
+            "legendFormat": "99.9%-ile",
+            "refId": "A"
           },
           {
-            "aliasColors": {},
-            "bars": false,
-            "cacheTimeout": null,
-            "dashLength": 10,
-            "dashes": false,
-            "decimals": 0,
-            "description": "",
-            "fill": 0,
-            "gridPos": {
-              "h": 8,
-              "w": 12,
-              "x": 12,
-              "y": 2
-            },
-            "id": 16,
-            "legend": {
-              "alignAsTable": true,
-              "avg": false,
-              "current": true,
-              "max": false,
-              "min": false,
-              "rightSide": true,
-              "show": true,
-              "total": false,
-              "values": true
-            },
-            "lines": true,
-            "linewidth": 1,
-            "links": [],
-            "nullPointMode": "null",
-            "options": {},
-            "percentage": false,
-            "pluginVersion": "6.2.4",
-            "pointradius": 2,
-            "points": false,
-            "renderer": "flot",
-            "seriesOverrides": [],
-            "spaceLength": 10,
-            "stack": false,
-            "steppedLine": false,
-            "targets": [
-              {
-                "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "interval": "",
-                "intervalFactor": 1,
-                "legendFormat": "99.9%-ile",
-                "refId": "A"
-              },
-              {
-                "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "99%-ile",
-                "refId": "B"
-              },
-              {
-                "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "95%-ile",
-                "refId": "C"
-              },
-              {
-                "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "90%-ile",
-                "refId": "D"
-              },
-              {
-                "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "50%-ile",
-                "refId": "F"
-              },
-              {
-                "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
-                "format": "time_series",
-                "intervalFactor": 1,
-                "legendFormat": "10%-ile",
-                "refId": "H"
-              }
-            ],
-            "thresholds": [],
-            "timeFrom": null,
-            "timeRegions": [],
-            "timeShift": null,
-            "title": "Tickets per Match",
-            "tooltip": {
-              "shared": true,
-              "sort": 0,
-              "value_type": "individual"
-            },
-            "transparent": true,
-            "type": "graph",
-            "xaxis": {
-              "buckets": null,
-              "mode": "time",
-              "name": null,
-              "show": true,
-              "values": []
-            },
-            "yaxes": [
-              {
-                "decimals": 0,
-                "format": "none",
-                "label": null,
-                "logBase": 2,
-                "max": null,
-                "min": null,
-                "show": true
-              },
-              {
-                "format": "short",
-                "label": null,
-                "logBase": 1,
-                "max": null,
-                "min": null,
-                "show": true
-              }
-            ],
-            "yaxis": {
-              "align": false,
-              "alignLevel": null
-            }
+            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "99%-ile",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "95%-ile",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "90%-ile",
+            "refId": "D"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "50%-ile",
+            "refId": "F"
+          },
+          {
+            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_total_bytes_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "10%-ile",
+            "refId": "H"
           }
         ],
-        "title": "Matches",
-        "type": "row"
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Total Bytes per Ticket",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "transparent": true,
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": null,
+            "format": "bytes",
+            "label": null,
+            "logBase": 2,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {},
+        "bars": false,
+        "cacheTimeout": null,
+        "dashLength": 10,
+        "dashes": false,
+        "decimals": 0,
+        "description": "",
+        "fill": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 1
+        },
+        "id": 14,
+        "legend": {
+          "alignAsTable": true,
+          "avg": false,
+          "current": true,
+          "max": false,
+          "min": false,
+          "rightSide": true,
+          "show": true,
+          "total": false,
+          "values": true
+        },
+        "lines": true,
+        "linewidth": 1,
+        "links": [],
+        "nullPointMode": "null",
+        "options": {},
+        "percentage": false,
+        "pluginVersion": "6.2.4",
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "interval": "",
+            "intervalFactor": 1,
+            "legendFormat": "99.9%-ile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "99%-ile",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "95%-ile",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "90%-ile",
+            "refId": "D"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "50%-ile",
+            "refId": "F"
+          },
+          {
+            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_searchfields_per_ticket_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "10%-ile",
+            "refId": "H"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "SearchFields per Ticket",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "transparent": true,
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": null,
+            "format": "none",
+            "label": null,
+            "logBase": 2,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {},
+        "bars": false,
+        "cacheTimeout": null,
+        "dashLength": 10,
+        "dashes": false,
+        "decimals": 0,
+        "description": "",
+        "fill": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 9
+        },
+        "id": 15,
+        "legend": {
+          "alignAsTable": true,
+          "avg": false,
+          "current": true,
+          "max": false,
+          "min": false,
+          "rightSide": true,
+          "show": true,
+          "total": false,
+          "values": true
+        },
+        "lines": true,
+        "linewidth": 1,
+        "links": [],
+        "nullPointMode": "null",
+        "options": {},
+        "percentage": false,
+        "pluginVersion": "6.2.4",
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "sum(rate(openmatch_dev_tickets_assigned[5m]))",
+            "format": "time_series",
+            "interval": "",
+            "intervalFactor": 1,
+            "legendFormat": "assigned",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(openmatch_dev_tickets_released[5m]))",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "released",
+            "refId": "B"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Ticket Assigned/Release Rate",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "transparent": true,
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": null,
+            "format": "none",
+            "label": null,
+            "logBase": 2,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
       },
       {
         "collapsed": false,
@@ -695,7 +395,277 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 2
+          "y": 17
+        },
+        "id": 8,
+        "panels": [],
+        "title": "Matches",
+        "type": "row"
+      },
+      {
+        "aliasColors": {},
+        "bars": false,
+        "cacheTimeout": null,
+        "dashLength": 10,
+        "dashes": false,
+        "description": "",
+        "fill": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 0,
+          "y": 18
+        },
+        "id": 13,
+        "legend": {
+          "alignAsTable": true,
+          "avg": true,
+          "current": true,
+          "max": false,
+          "min": false,
+          "rightSide": true,
+          "show": true,
+          "total": false,
+          "values": true
+        },
+        "lines": true,
+        "linewidth": 1,
+        "links": [],
+        "nullPointMode": "null",
+        "options": {},
+        "percentage": false,
+        "pluginVersion": "6.2.4",
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "interval": "",
+            "intervalFactor": 1,
+            "legendFormat": "99.9%-ile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "99%-ile",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "95%-ile",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "90%-ile",
+            "refId": "D"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "50%-ile",
+            "refId": "F"
+          },
+          {
+            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_total_bytes_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "10%-ile",
+            "refId": "H"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Total Bytes per Match",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "transparent": true,
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": null,
+            "format": "bytes",
+            "label": null,
+            "logBase": 2,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "aliasColors": {},
+        "bars": false,
+        "cacheTimeout": null,
+        "dashLength": 10,
+        "dashes": false,
+        "decimals": 0,
+        "description": "",
+        "fill": 0,
+        "gridPos": {
+          "h": 8,
+          "w": 12,
+          "x": 12,
+          "y": 18
+        },
+        "id": 16,
+        "legend": {
+          "alignAsTable": true,
+          "avg": false,
+          "current": true,
+          "max": false,
+          "min": false,
+          "rightSide": true,
+          "show": true,
+          "total": false,
+          "values": true
+        },
+        "lines": true,
+        "linewidth": 1,
+        "links": [],
+        "nullPointMode": "null",
+        "options": {},
+        "percentage": false,
+        "pluginVersion": "6.2.4",
+        "pointradius": 2,
+        "points": false,
+        "renderer": "flot",
+        "seriesOverrides": [],
+        "spaceLength": 10,
+        "stack": false,
+        "steppedLine": false,
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "interval": "",
+            "intervalFactor": 1,
+            "legendFormat": "99.9%-ile",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "99%-ile",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "95%-ile",
+            "refId": "C"
+          },
+          {
+            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "90%-ile",
+            "refId": "D"
+          },
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "50%-ile",
+            "refId": "F"
+          },
+          {
+            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_tickets_per_match_bucket[5m])) by (le))\n",
+            "format": "time_series",
+            "intervalFactor": 1,
+            "legendFormat": "10%-ile",
+            "refId": "H"
+          }
+        ],
+        "thresholds": [],
+        "timeFrom": null,
+        "timeRegions": [],
+        "timeShift": null,
+        "title": "Tickets per Match",
+        "tooltip": {
+          "shared": true,
+          "sort": 0,
+          "value_type": "individual"
+        },
+        "transparent": true,
+        "type": "graph",
+        "xaxis": {
+          "buckets": null,
+          "mode": "time",
+          "name": null,
+          "show": true,
+          "values": []
+        },
+        "yaxes": [
+          {
+            "decimals": 0,
+            "format": "none",
+            "label": null,
+            "logBase": 2,
+            "max": null,
+            "min": null,
+            "show": true
+          },
+          {
+            "format": "short",
+            "label": null,
+            "logBase": 1,
+            "max": null,
+            "min": null,
+            "show": true
+          }
+        ],
+        "yaxis": {
+          "align": false,
+          "alignLevel": null
+        }
+      },
+      {
+        "collapsed": false,
+        "gridPos": {
+          "h": 1,
+          "w": 24,
+          "x": 0,
+          "y": 26
         },
         "id": 6,
         "panels": [],
@@ -713,7 +683,7 @@
           "h": 8,
           "w": 24,
           "x": 0,
-          "y": 3
+          "y": 27
         },
         "id": 19,
         "legend": {
@@ -811,7 +781,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 11
+          "y": 35
         },
         "id": 17,
         "legend": {
@@ -940,7 +910,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 11
+          "y": 35
         },
         "id": 22,
         "legend": {
@@ -1069,7 +1039,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 19
+          "y": 43
         },
         "id": 23,
         "legend": {
@@ -1196,7 +1166,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 19
+          "y": 43
         },
         "id": 21,
         "legend": {
@@ -1281,7 +1251,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 27
+          "y": 51
         },
         "id": 4,
         "title": "Evaluator",
@@ -1300,7 +1270,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 28
+          "y": 52
         },
         "id": 24,
         "legend": {
@@ -1330,7 +1300,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_evaluator_matches_per_request[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_evaluator_matches_per_request_bucket[5m])) by (le))\n",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -1338,35 +1308,35 @@
             "refId": "A"
           },
           {
-            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_evaluator_matches_per_request[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_evaluator_matches_per_request_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "99%-ile",
             "refId": "B"
           },
           {
-            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_evaluator_matches_per_request[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_evaluator_matches_per_request_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "95%-ile",
             "refId": "C"
           },
           {
-            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_evaluator_matches_per_request[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_evaluator_matches_per_request_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "90%-ile",
             "refId": "D"
           },
           {
-            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_evaluator_matches_per_request[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_evaluator_matches_per_request_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "50%-ile",
             "refId": "F"
           },
           {
-            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_evaluator_matches_per_request[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_evaluator_matches_per_request_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "10%-ile",
@@ -1429,7 +1399,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 28
+          "y": 52
         },
         "id": 25,
         "legend": {
@@ -1459,7 +1429,7 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_evaluator_matches_per_response[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_evaluator_matches_per_response_bucket[5m])) by (le))\n",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
@@ -1467,35 +1437,35 @@
             "refId": "A"
           },
           {
-            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_evaluator_matches_per_response[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_evaluator_matches_per_response_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "99%-ile",
             "refId": "B"
           },
           {
-            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_evaluator_matches_per_response[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_evaluator_matches_per_response_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "95%-ile",
             "refId": "C"
           },
           {
-            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_evaluator_matches_per_response[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_evaluator_matches_per_response_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "90%-ile",
             "refId": "D"
           },
           {
-            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_evaluator_matches_per_response[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_evaluator_matches_per_response_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "50%-ile",
             "refId": "F"
           },
           {
-            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_evaluator_matches_per_response[5m])) by (le))\n",
+            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_evaluator_matches_per_response_bucket[5m])) by (le))\n",
             "format": "time_series",
             "intervalFactor": 1,
             "legendFormat": "10%-ile",
@@ -1558,7 +1528,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 36
+          "y": 60
         },
         "id": 26,
         "legend": {
@@ -1588,47 +1558,12 @@
         "steppedLine": false,
         "targets": [
           {
-            "expr": "histogram_quantile(0.999, sum(rate(openmatch_dev_evaluator_collided_matches_per_call[5m])) by (le))\n",
+            "expr": "avg(rate(openmatch_dev_evaluator_collided_matches_per_call[5m]))\n",
             "format": "time_series",
             "interval": "",
             "intervalFactor": 1,
             "legendFormat": "99.9%-ile",
             "refId": "A"
-          },
-          {
-            "expr": "histogram_quantile(0.99, sum(rate(openmatch_dev_evaluator_collided_matches_per_call[5m])) by (le))\n",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "99%-ile",
-            "refId": "B"
-          },
-          {
-            "expr": "histogram_quantile(0.95, sum(rate(openmatch_dev_evaluator_collided_matches_per_call[5m])) by (le))\n",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "95%-ile",
-            "refId": "C"
-          },
-          {
-            "expr": "histogram_quantile(0.90, sum(rate(openmatch_dev_evaluator_collided_matches_per_call[5m])) by (le))\n",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "90%-ile",
-            "refId": "D"
-          },
-          {
-            "expr": "histogram_quantile(0.50, sum(rate(openmatch_dev_evaluator_collided_matches_per_call[5m])) by (le))\n",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "50%-ile",
-            "refId": "F"
-          },
-          {
-            "expr": "histogram_quantile(0.10, sum(rate(openmatch_dev_evaluator_collided_matches_per_call[5m])) by (le))\n",
-            "format": "time_series",
-            "intervalFactor": 1,
-            "legendFormat": "10%-ile",
-            "refId": "H"
           }
         ],
         "thresholds": [],
@@ -1679,7 +1614,7 @@
           "h": 1,
           "w": 24,
           "x": 0,
-          "y": 44
+          "y": 68
         },
         "id": 2,
         "title": "Synchronizer",
@@ -1698,7 +1633,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 45
+          "y": 69
         },
         "id": 29,
         "legend": {
@@ -1827,7 +1762,7 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 45
+          "y": 69
         },
         "id": 28,
         "legend": {
@@ -1956,7 +1891,7 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 53
+          "y": 77
         },
         "id": 27,
         "legend": {

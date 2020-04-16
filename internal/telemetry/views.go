@@ -42,14 +42,14 @@ var (
 		TicketsAssigned,
 		"openmatch.dev/tickets_assigned",
 		"Number of tickets assigned per request",
-		view.Count(),
+		view.Sum(),
 	)
 
 	TicketsReleasedView = measureToDefaultView(
 		TicketsReleased,
 		"openmatch.dev/tickets_released",
 		"Number of tickets released per request",
-		view.Count(),
+		view.Sum(),
 	)
 )
 
@@ -142,7 +142,7 @@ var (
 		CollidedMatchesPerEvaluate,
 		"openmatch.dev/evaluator/collided_matches_per_call",
 		"Number of collided matches per default evaluator call",
-		DefaultCountDistribution,
+		view.Sum(),
 	)
 )
 

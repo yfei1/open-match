@@ -86,7 +86,7 @@ func (s *evaluatorService) Evaluate(stream pb.Evaluator_EvaluateServer) error {
 		return status.Error(codes.Aborted, err.Error())
 	}
 
-	stats.Record(ctx, telemetry.MatchesPerEvaluateRequest.M(int64(len(results))))
+	stats.Record(ctx, telemetry.MatchesPerEvaluateResponse.M(int64(len(results))))
 	for _, result := range results {
 		if err := stream.Send(&pb.EvaluateResponse{MatchId: result}); err != nil {
 			return err
